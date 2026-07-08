@@ -4,7 +4,37 @@
 
 ## Status
 - **Phase 1 (card data pipeline): COMPLETE** — 2026-07-08
-- Next: **Phase 2 — rules engine** (see BUILD_PLAN.md)
+- **Phase 2 (rules engine): COMPLETE** — 2026-07-08. Generator-based
+  deterministic engine; 32 passing tests. Architecture: `docs/ENGINE.md`.
+- Next: **Phase 3 — card abilities in waves** (see BUILD_PLAN.md).
+  Priority order: (a) wire missing engine hooks (turn-start triggers,
+  on-successful-run, paid-ability windows), (b) Wave A vanilla/simple cards,
+  (c) coverage checklist in docs/CARD_COVERAGE.md. All 33 events/operations
+  MUST be scripted or they can't be played at all.
+
+## GitHub (sync at the end of every step)
+- Repo: `bmiraski/netrunner-game` (main). Access token: `.git-token` file in
+  the project folder (gitignored — never commit it).
+- The mounted outputs folder does NOT allow file deletion from sandbox bash,
+  which breaks git lock files. Therefore the git dir lives OUTSIDE the mount.
+  Per session setup (bash):
+  ```
+  W=/sessions/<session>/mnt/outputs/netrunner
+  git --git-dir=/tmp/nr.git init -q -b main
+  G() { git --git-dir=/tmp/nr.git --work-tree=$W "$@"; }
+  cd $W && G remote add origin "https://$(cat .git-token)@github.com/bmiraski/netrunner-game.git"
+  G fetch -q origin && G reset -q --mixed origin/main   # sync index to remote
+  ```
+  Then `G add -A && G commit && G push origin main`. A stale `.git/` dir in
+  the project folder is dead — ignore it (it's in .gitignore).
+- If the folder is empty in a fresh session, restore with the same setup then
+  `G checkout origin/main -- .`
+
+## Google Docs mirrors
+- BUILD_PLAN.md and PROJECT_NOTES.md are mirrored to the user's Google Drive
+  (they feed Claude project memory). Drive connector can only CREATE files,
+  not edit — so each sync creates a new doc with the same title; user deletes
+  stale copies. Sync whenever these two files change materially.
 
 ## Locked decisions
 - Browser app, single self-contained HTML deliverable (`netrunner.html`), runs offline on Mac
@@ -27,7 +57,12 @@ data/
 docs/
   BUILD_PLAN.md       ← 9-phase roadmap (key project document)
   PROJECT_NOTES.md    ← this file
-engine/ cards/ ai/ ui/ tutorial/ analysis/ stats/ tests/   ← empty, Phases 2+
+  ENGINE.md           ← engine architecture + how to script cards / write tests
+engine/               ← rules engine (rng, events, state, decisions, effects,
+                        game, run, db) — see ENGINE.md
+cards/                ← registry.js + pilots.js (11 pilot scripts)
+tests/                ← run-tests.js + core.test.js + coverage.test.js (32 tests)
+ai/ ui/ tutorial/ analysis/ stats/   ← empty, Phases 4+
 ```
 
 ## Card data facts
@@ -53,7 +88,9 @@ engine/ cards/ ai/ ui/ tutorial/ analysis/ stats/ tests/   ← empty, Phases 2+
 - Write unit tests in `tests/` as engine features land, runnable via `node` in sandbox
 - Update the Status section of this file at the end of every working session
 
-## Phase 2 kickoff pointers (next session)
-- Implement in JS (ES modules in `engine/`, bundled to single HTML in Phase 9)
-- Start: game state model + turn/click structure + economy actions, then run timing structure per Rules Reference v1.1 pp. "Timing of a Run"
+## Phase 3 kickoff pointers (next session)
+- Read `docs/ENGINE.md` first — it explains the card-script hook API and test
+  conventions, and lists engine hooks that still need wiring
+- Scripting all 132 cards is ideal subagent grunt work: batch by faction,
+  every batch must ship with tests, run `node tests/run-tests.js` green
 - Rules Reference + rulebook PDFs are in project knowledge (files/ folder)
