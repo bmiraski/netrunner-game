@@ -1,0 +1,5 @@
+data/tmp/
+tests/_check*.mjs
+.DS_Store
+.git-token
+.git

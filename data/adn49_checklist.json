@@ -1,0 +1,662 @@
+[
+ {
+  "name": "Reina Roja",
+  "type": "Identity",
+  "qty": 1
+ },
+ {
+  "name": "Gabriel Santiago",
+  "type": "Identity",
+  "qty": 1
+ },
+ {
+  "name": "Chaos Theory",
+  "type": "Identity",
+  "qty": 1
+ },
+ {
+  "name": "Infiltration",
+  "type": "Event",
+  "qty": 2
+ },
+ {
+  "name": "Demolition Run",
+  "type": "Event",
+  "qty": 2
+ },
+ {
+  "name": "Easy Mark",
+  "type": "Event",
+  "qty": 3
+ },
+ {
+  "name": "Diesel",
+  "type": "Event",
+  "qty": 2
+ },
+ {
+  "name": "Sure Gamble",
+  "type": "Event",
+  "qty": 3
+ },
+ {
+  "name": "Retrieval Run",
+  "type": "Event",
+  "qty": 2
+ },
+ {
+  "name": "Emergency Shutdown",
+  "type": "Event",
+  "qty": 2
+ },
+ {
+  "name": "Indexing",
+  "type": "Event",
+  "qty": 2
+ },
+ {
+  "name": "Dyson Mem Chip",
+  "type": "Hardware",
+  "qty": 3
+ },
+ {
+  "name": "Singularity",
+  "type": "Event",
+  "qty": 1
+ },
+ {
+  "name": "Forged Activation Orders",
+  "type": "Event",
+  "qty": 2
+ },
+ {
+  "name": "Modded",
+  "type": "Event",
+  "qty": 3
+ },
+ {
+  "name": "Crypsis",
+  "type": "Program",
+  "qty": 2
+ },
+ {
+  "name": "Stimhack",
+  "type": "Event",
+  "qty": 1
+ },
+ {
+  "name": "Inside Job",
+  "type": "Event",
+  "qty": 2
+ },
+ {
+  "name": "Notoriety",
+  "type": "Event",
+  "qty": 1
+ },
+ {
+  "name": "Armitage Codebusting",
+  "type": "Resource",
+  "qty": 3
+ },
+ {
+  "name": "Cyberfeeder",
+  "type": "Hardware",
+  "qty": 2
+ },
+ {
+  "name": "Special Order",
+  "type": "Event",
+  "qty": 1
+ },
+ {
+  "name": "Test Run",
+  "type": "Event",
+  "qty": 2
+ },
+ {
+  "name": "Underworld Contact",
+  "type": "Resource",
+  "qty": 2
+ },
+ {
+  "name": "Spinal Modem",
+  "type": "Hardware",
+  "qty": 2
+ },
+ {
+  "name": "Doppelganger",
+  "type": "Hardware",
+  "qty": 2
+ },
+ {
+  "name": "The Maker's Eye",
+  "type": "Event",
+  "qty": 1
+ },
+ {
+  "name": "Darwin",
+  "type": "Program",
+  "qty": 2
+ },
+ {
+  "name": "HQ Interface",
+  "type": "Hardware",
+  "qty": 1
+ },
+ {
+  "name": "Tinkering",
+  "type": "Event",
+  "qty": 2
+ },
+ {
+  "name": "Datasucker",
+  "type": "Program",
+  "qty": 2
+ },
+ {
+  "name": "Aurora",
+  "type": "Program",
+  "qty": 3
+ },
+ {
+  "name": "Dinosaurus",
+  "type": "Hardware",
+  "qty": 2
+ },
+ {
+  "name": "False Lead",
+  "type": "Agenda",
+  "qty": 1
+ },
+ {
+  "name": "Force of Nature",
+  "type": "Program",
+  "qty": 3
+ },
+ {
+  "name": "Faerie",
+  "type": "Program",
+  "qty": 3
+ },
+ {
+  "name": "Rabbit Hole",
+  "type": "Hardware",
+  "qty": 2
+ },
+ {
+  "name": "Priority Requisition",
+  "type": "Agenda",
+  "qty": 2
+ },
+ {
+  "name": "Imp",
+  "type": "Program",
+  "qty": 1
+ },
+ {
+  "name": "Femme Fatale",
+  "type": "Program",
+  "qty": 2
+ },
+ {
+  "name": "The Personal Touch",
+  "type": "Hardware",
+  "qty": 1
+ },
+ {
+  "name": "Private Security Force",
+  "type": "Agenda",
+  "qty": 2
+ },
+ {
+  "name": "Hemorrhage",
+  "type": "Program",
+  "qty": 1
+ },
+ {
+  "name": "Peacock",
+  "type": "Program",
+  "qty": 3
+ },
+ {
+  "name": "Battering Ram",
+  "type": "Program",
+  "qty": 3
+ },
+ {
+  "name": "Melange Mining Corp.",
+  "type": "Asset",
+  "qty": 2
+ },
+ {
+  "name": "Mimic",
+  "type": "Program",
+  "qty": 3
+ },
+ {
+  "name": "Pheromones",
+  "type": "Program",
+  "qty": 1
+ },
+ {
+  "name": "Gordian Blade",
+  "type": "Program",
+  "qty": 3
+ },
+ {
+  "name": "PAD Campaign",
+  "type": "Asset",
+  "qty": 3
+ },
+ {
+  "name": "Morning Star",
+  "type": "Program",
+  "qty": 3
+ },
+ {
+  "name": "Sneakdoor Beta",
+  "type": "Program",
+  "qty": 1
+ },
+ {
+  "name": "Magnum Opus",
+  "type": "Program",
+  "qty": 2
+ },
+ {
+  "name": "Enigma",
+  "type": "ICE",
+  "qty": 3
+ },
+ {
+  "name": "Ice Carver",
+  "type": "Resource",
+  "qty": 1
+ },
+ {
+  "name": "Bank Job",
+  "type": "Resource",
+  "qty": 2
+ },
+ {
+  "name": "Pipeline",
+  "type": "Program",
+  "qty": 3
+ },
+ {
+  "name": "Hunter",
+  "type": "ICE",
+  "qty": 2
+ },
+ {
+  "name": "Liberated Account",
+  "type": "Resource",
+  "qty": 3
+ },
+ {
+  "name": "Crash Space",
+  "type": "Resource",
+  "qty": 2
+ },
+ {
+  "name": "Aesop's Pawnshop",
+  "type": "Resource",
+  "qty": 1
+ },
+ {
+  "name": "Wall of Static",
+  "type": "ICE",
+  "qty": 3
+ },
+ {
+  "name": "Scrubber",
+  "type": "Resource",
+  "qty": 2
+ },
+ {
+  "name": "Fall Guy",
+  "type": "Resource",
+  "qty": 1
+ },
+ {
+  "name": "All-nighter",
+  "type": "Resource",
+  "qty": 1
+ },
+ {
+  "name": "Hedge Fund",
+  "type": "Operation",
+  "qty": 3
+ },
+ {
+  "name": "Xanadu",
+  "type": "Resource",
+  "qty": 1
+ },
+ {
+  "name": "Mr. Li",
+  "type": "Resource",
+  "qty": 1
+ },
+ {
+  "name": "Sacrificial Construct",
+  "type": "Resource",
+  "qty": 1
+ },
+ {
+  "name": "Stronger Together",
+  "type": "Identity",
+  "qty": 1
+ },
+ {
+  "name": "Building a Better World",
+  "type": "Identity",
+  "qty": 1
+ },
+ {
+  "name": "Personal Evolution",
+  "type": "Identity",
+  "qty": 1
+ },
+ {
+  "name": "Making News",
+  "type": "Identity",
+  "qty": 1
+ },
+ {
+  "name": "Project Ares",
+  "type": "Agenda",
+  "qty": 2
+ },
+ {
+  "name": "Hostile Takeover",
+  "type": "Agenda",
+  "qty": 1
+ },
+ {
+  "name": "Braintrust",
+  "type": "Agenda",
+  "qty": 3
+ },
+ {
+  "name": "Project Beale",
+  "type": "Agenda",
+  "qty": 3
+ },
+ {
+  "name": "Project Vitruvius",
+  "type": "Agenda",
+  "qty": 3
+ },
+ {
+  "name": "Project Atlas",
+  "type": "Agenda",
+  "qty": 3
+ },
+ {
+  "name": "Nisei MK II",
+  "type": "Agenda",
+  "qty": 2
+ },
+ {
+  "name": "TGTBT",
+  "type": "Agenda",
+  "qty": 3
+ },
+ {
+  "name": "Adonis Campaign",
+  "type": "Asset",
+  "qty": 3
+ },
+ {
+  "name": "The Cleaners",
+  "type": "Agenda",
+  "qty": 1
+ },
+ {
+  "name": "Project Junebug",
+  "type": "Asset",
+  "qty": 2
+ },
+ {
+  "name": "Ghost Branch",
+  "type": "Asset",
+  "qty": 1
+ },
+ {
+  "name": "Aggressive Secretary",
+  "type": "Asset",
+  "qty": 1
+ },
+ {
+  "name": "Dedicated Response Team",
+  "type": "Asset",
+  "qty": 1
+ },
+ {
+  "name": "Ronin",
+  "type": "Asset",
+  "qty": 1
+ },
+ {
+  "name": "Data Raven",
+  "type": "ICE",
+  "qty": 2
+ },
+ {
+  "name": "Heimdall 1.0",
+  "type": "ICE",
+  "qty": 1
+ },
+ {
+  "name": "Elizabeth Mills",
+  "type": "Asset",
+  "qty": 1
+ },
+ {
+  "name": "Snare!",
+  "type": "Asset",
+  "qty": 2
+ },
+ {
+  "name": "Flare",
+  "type": "ICE",
+  "qty": 1
+ },
+ {
+  "name": "Hudson 1.0",
+  "type": "ICE",
+  "qty": 1
+ },
+ {
+  "name": "GRNDL Refinery",
+  "type": "Asset",
+  "qty": 3
+ },
+ {
+  "name": "Himitsu-Bako",
+  "type": "ICE",
+  "qty": 3
+ },
+ {
+  "name": "Pop-up Window",
+  "type": "ICE",
+  "qty": 3
+ },
+ {
+  "name": "Ichi 1.0",
+  "type": "ICE",
+  "qty": 2
+ },
+ {
+  "name": "Archer",
+  "type": "ICE",
+  "qty": 1
+ },
+ {
+  "name": "Neural Katana",
+  "type": "ICE",
+  "qty": 1
+ },
+ {
+  "name": "Tollbooth",
+  "type": "ICE",
+  "qty": 2
+ },
+ {
+  "name": "Rototurret",
+  "type": "ICE",
+  "qty": 2
+ },
+ {
+  "name": "Caduceus",
+  "type": "ICE",
+  "qty": 2
+ },
+ {
+  "name": "Swordsman",
+  "type": "ICE",
+  "qty": 2
+ },
+ {
+  "name": "Wraparound",
+  "type": "ICE",
+  "qty": 2
+ },
+ {
+  "name": "Viktor 1.0",
+  "type": "ICE",
+  "qty": 3
+ },
+ {
+  "name": "Hadrian's Wall",
+  "type": "ICE",
+  "qty": 1
+ },
+ {
+  "name": "Wall of Thorns",
+  "type": "ICE",
+  "qty": 1
+ },
+ {
+  "name": "Anonymous Tip",
+  "type": "Operation",
+  "qty": 1
+ },
+ {
+  "name": "Archived Memories",
+  "type": "Operation",
+  "qty": 1
+ },
+ {
+  "name": "Hive",
+  "type": "ICE",
+  "qty": 2
+ },
+ {
+  "name": "Whirlpool",
+  "type": "ICE",
+  "qty": 1
+ },
+ {
+  "name": "Closed Accounts",
+  "type": "Operation",
+  "qty": 2
+ },
+ {
+  "name": "Biotic Labor",
+  "type": "Operation",
+  "qty": 2
+ },
+ {
+  "name": "Ice Wall",
+  "type": "ICE",
+  "qty": 2
+ },
+ {
+  "name": "Yagura",
+  "type": "ICE",
+  "qty": 1
+ },
+ {
+  "name": "Psychographics",
+  "type": "Operation",
+  "qty": 3
+ },
+ {
+  "name": "Green Level Clearance",
+  "type": "Operation",
+  "qty": 3
+ },
+ {
+  "name": "Shadow",
+  "type": "ICE",
+  "qty": 2
+ },
+ {
+  "name": "Celebrity Gift",
+  "type": "Operation",
+  "qty": 3
+ },
+ {
+  "name": "SEA Source",
+  "type": "Operation",
+  "qty": 2
+ },
+ {
+  "name": "Shipment from MirrorMorph",
+  "type": "Operation",
+  "qty": 1
+ },
+ {
+  "name": "Beanstalk Royalties",
+  "type": "Operation",
+  "qty": 3
+ },
+ {
+  "name": "Neural EMP",
+  "type": "Operation",
+  "qty": 2
+ },
+ {
+  "name": "Red Herrings",
+  "type": "Upgrade",
+  "qty": 1
+ },
+ {
+  "name": "Ash 2X3ZB9CY",
+  "type": "Upgrade",
+  "qty": 1
+ },
+ {
+  "name": "Punitive Counterstrike",
+  "type": "Operation",
+  "qty": 2
+ },
+ {
+  "name": "Trick of Light",
+  "type": "Operation",
+  "qty": 2
+ },
+ {
+  "name": "Bernice Mai",
+  "type": "Upgrade",
+  "qty": 1
+ },
+ {
+  "name": "Strongbox",
+  "type": "Upgrade",
+  "qty": 1
+ },
+ {
+  "name": "Shipment from Kaguya",
+  "type": "Operation",
+  "qty": 2
+ },
+ {
+  "name": "Hokusai Grid",
+  "type": "Upgrade",
+  "qty": 1
+ }
+]
