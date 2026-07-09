@@ -2,8 +2,9 @@
 import { registerPilots } from './pilots.js';
 import { registerWavesA } from './waves-a.js';
 import { registerWavesB } from './waves-b.js';
+import { registerWavesC } from './waves-c.js';
 
-const waves = [registerPilots, registerWavesA, registerWavesB];
+const waves = [registerPilots, registerWavesA, registerWavesB, registerWavesC];
 // WAVE REGISTRATIONS (batch agents: import your registerWavesX above and push
 // it here, keeping alphabetical batch order A, B, C, D):
 

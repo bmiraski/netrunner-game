@@ -310,7 +310,8 @@ export default [
   t.num(6);   // runner boosts link 0 -> 6, exceeding the trace
   assert.equal(game.state.runner.tags, 0);
   assert.equal(game.state.corp.credits, corpCreditsBefore - 2);
-  assert.equal(game.state.runner.credits, runnerCreditsBefore - 6);
+  // -6 link boost, +2 Gabriel (run still succeeds after failed trace)
+  assert.equal(game.state.runner.credits, runnerCreditsBefore - 6 + 2);
   assert.equal(lastEvent(game, 'trace-result').data.success, false);
 }],
 

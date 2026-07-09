@@ -125,7 +125,7 @@ export default [
   while (game.decision && !game.decision.actionMenu) driver(game).pick(game.decision.options[0].id);
   t.pick('remove-tag');
   assert.equal(game.state.runner.tags, 0);
-  assert.equal(game.state.runner.credits, 3);
+  assert.equal(game.state.runner.credits, 5); // 5 -2 tag +2 Gabriel (successful HQ run)
 }],
 
 ['advanceable ice: Ice Wall gains strength', () => {

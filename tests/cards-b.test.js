@@ -423,7 +423,8 @@ export default [
   t.pick('continue');
   const runnerCredsBefore = g.state.runner.credits;
   t.pick('pay');
-  assert.equal(g.state.runner.credits, runnerCredsBefore - 1);
+  // -1 sub payment, +2 Gabriel (successful HQ run completes before next decision)
+  assert.equal(g.state.runner.credits, runnerCredsBefore - 1 + 2);
   assert.equal(lastEvent(game, 'run-end').data.successful, true);
 }],
 

@@ -89,42 +89,42 @@ Simplifications MUST be noted here. Wave files: cards/waves-<a|b|c|d>.js
 
 | Code | Title | Type | Status | Notes |
 |------|-------|------|--------|-------|
-| 20001 | Reina Roja: Freedom Fighter | identity | pending | |
-| 20002 | Demolition Run | event | pending | |
-| 20003 | Retrieval Run | event | pending | |
-| 20004 | Singularity | event | pending | |
-| 20005 | Stimhack | event | pending | |
-| 20006 | Cyberfeeder | hardware | pending | |
-| 20007 | Spinal Modem | hardware | pending | |
-| 20008 | Darwin | program | pending | |
-| 20009 | Datasucker | program | pending | |
-| 20010 | Force of Nature | program | pending | |
-| 20011 | Imp | program | pending | |
-| 20012 | Hemorrhage | program | pending | |
+| 20001 | Reina Roja: Freedom Fighter | identity | scripted (tests pending) | |
+| 20002 | Demolition Run | event | scripted (tests pending) | |
+| 20003 | Retrieval Run | event | scripted (tests pending) | |
+| 20004 | Singularity | event | scripted (tests pending) | |
+| 20005 | Stimhack | event | scripted (tests pending) | |
+| 20006 | Cyberfeeder | hardware | scripted (tests pending) | |
+| 20007 | Spinal Modem | hardware | scripted (tests pending) | |
+| 20008 | Darwin | program | scripted (tests pending) | |
+| 20009 | Datasucker | program | scripted (tests pending) | |
+| 20010 | Force of Nature | program | scripted (tests pending) | |
+| 20011 | Imp | program | scripted (tests pending) | |
+| 20012 | Hemorrhage | program | scripted (tests pending) | |
 | 20013 | Mimic | program | pilot | |
-| 20014 | Morning Star | program | pending | |
-| 20015 | Ice Carver | resource | pending | |
-| 20016 | Liberated Account | resource | pending | |
-| 20017 | Scrubber | resource | pending | |
-| 20018 | Xanadu | resource | pending | |
-| 20019 | Gabriel Santiago: Consummate Professional | identity | pending | |
+| 20014 | Morning Star | program | scripted (tests pending) | |
+| 20015 | Ice Carver | resource | scripted (tests pending) | |
+| 20016 | Liberated Account | resource | scripted (tests pending) | |
+| 20017 | Scrubber | resource | scripted (tests pending) | |
+| 20018 | Xanadu | resource | scripted (tests pending) | |
+| 20019 | Gabriel Santiago: Consummate Professional | identity | scripted (tests pending) | |
 | 20020 | Easy Mark | event | pilot | |
-| 20021 | Emergency Shutdown | event | pending | |
-| 20022 | Forged Activation Orders | event | pending | |
-| 20023 | Inside Job | event | pending | |
-| 20024 | Special Order | event | pending | |
-| 20025 | Doppelgänger | hardware | pending | |
-| 20026 | HQ Interface | hardware | pending | |
-| 20027 | Aurora | program | pending | |
-| 20028 | Faerie | program | pending | |
-| 20029 | Femme Fatale | program | pending | |
-| 20030 | Peacock | program | pending | |
-| 20031 | Pheromones | program | pending | |
-| 20032 | Sneakdoor Beta | program | pending | |
-| 20033 | Bank Job | resource | pending | |
-| 20034 | Crash Space | resource | pending | |
-| 20035 | Fall Guy | resource | pending | |
-| 20036 | Mr. Li | resource | pending | |
+| 20021 | Emergency Shutdown | event | scripted (tests pending) | |
+| 20022 | Forged Activation Orders | event | scripted (tests pending) | |
+| 20023 | Inside Job | event | scripted (tests pending) | |
+| 20024 | Special Order | event | scripted (tests pending) | |
+| 20025 | Doppelgänger | hardware | scripted (tests pending) | |
+| 20026 | HQ Interface | hardware | scripted (tests pending) | |
+| 20027 | Aurora | program | scripted (tests pending) | |
+| 20028 | Faerie | program | scripted (tests pending) | |
+| 20029 | Femme Fatale | program | scripted (tests pending) | |
+| 20030 | Peacock | program | scripted (tests pending) | |
+| 20031 | Pheromones | program | scripted (tests pending) | |
+| 20032 | Sneakdoor Beta | program | scripted (tests pending) | |
+| 20033 | Bank Job | resource | scripted (tests pending) | |
+| 20034 | Crash Space | resource | scripted (tests pending) | |
+| 20035 | Fall Guy | resource | scripted (tests pending) | |
+| 20036 | Mr. Li | resource | scripted (tests pending) | |
 
 ## Batch D (Shaper + neutral runner) — 24 cards
 
