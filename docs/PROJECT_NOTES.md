@@ -9,7 +9,8 @@
 - **Phase 3 (card abilities): IN PROGRESS** — hook layer done; batches A (HB+Jinteki,
   32 cards) and B (NBN+Weyland+neutral corp, 34) done with tests; batch C
   (Anarch+Criminal, 34) done with tests; batch D (Shaper+neutral runner,
-  21 cards) not started. Suite: 142 passing. See docs/CARD_COVERAGE.md for per-card status/deviations.
+  21 cards) scripted in cards/waves-d.js — ALL 132/132 CARDS SCRIPTED —
+  but tests/cards-d.test.js NOT YET WRITTEN. Suite: 142 passing. See docs/CARD_COVERAGE.md for per-card status/deviations.
 - Original phase plan below:
   Priority order: (a) wire missing engine hooks (turn-start triggers,
   on-successful-run, paid-ability windows), (b) Wave A vanilla/simple cards,
