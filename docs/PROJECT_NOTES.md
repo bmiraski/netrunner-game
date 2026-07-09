@@ -8,9 +8,8 @@
   deterministic engine; 32 passing tests. Architecture: `docs/ENGINE.md`.
 - **Phase 3 (card abilities): IN PROGRESS** — hook layer done; batches A (HB+Jinteki,
   32 cards) and B (NBN+Weyland+neutral corp, 34) done with tests; batch C
-  (Anarch+Criminal, 34) scripted in cards/waves-c.js but tests/cards-c.test.js
-  NOT YET WRITTEN; batch D (Shaper+neutral runner, 21) not started.
-  Suite: 106 passing. See docs/CARD_COVERAGE.md for per-card status/deviations.
+  (Anarch+Criminal, 34) done with tests; batch D (Shaper+neutral runner,
+  21 cards) not started. Suite: 142 passing. See docs/CARD_COVERAGE.md for per-card status/deviations.
 - Original phase plan below:
   Priority order: (a) wire missing engine hooks (turn-start triggers,
   on-successful-run, paid-ability windows), (b) Wave A vanilla/simple cards,

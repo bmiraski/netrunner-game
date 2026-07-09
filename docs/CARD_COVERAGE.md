@@ -89,42 +89,42 @@ Simplifications MUST be noted here. Wave files: cards/waves-<a|b|c|d>.js
 
 | Code | Title | Type | Status | Notes |
 |------|-------|------|--------|-------|
-| 20001 | Reina Roja: Freedom Fighter | identity | scripted (tests pending) | |
-| 20002 | Demolition Run | event | scripted (tests pending) | |
-| 20003 | Retrieval Run | event | scripted (tests pending) | |
-| 20004 | Singularity | event | scripted (tests pending) | |
-| 20005 | Stimhack | event | scripted (tests pending) | |
-| 20006 | Cyberfeeder | hardware | scripted (tests pending) | |
-| 20007 | Spinal Modem | hardware | scripted (tests pending) | |
-| 20008 | Darwin | program | scripted (tests pending) | |
-| 20009 | Datasucker | program | scripted (tests pending) | |
-| 20010 | Force of Nature | program | scripted (tests pending) | |
-| 20011 | Imp | program | scripted (tests pending) | |
-| 20012 | Hemorrhage | program | scripted (tests pending) | |
+| 20001 | Reina Roja: Freedom Fighter | identity | done | |
+| 20002 | Demolition Run | event | done | The free-trash access ability is offered via the run's `accessAbilities` mod, which is checked *before* the steal decision in `accessCard`, so it can trash an accessed agenda instead of stealing it (matches "Access -> trash the card you are accessing" applying to any accessed card). |
+| 20003 | Retrieval Run | event | done | |
+| 20004 | Singularity | event | done | |
+| 20005 | Stimhack | event | done | Hosted credits are placed in `run.hostedCredits`, which `effects.js#pay()` already spends for the runner during any active run regardless of the payment's `purpose` — matches "hosted credits are considered to be in your credit pool" for the duration of the run. |
+| 20006 | Cyberfeeder | hardware | done | |
+| 20007 | Spinal Modem | hardware | done | |
+| 20008 | Darwin | program | done | |
+| 20009 | Datasucker | program | done | Deviation (documented in-code): the printed "hosted virus counter: rezzed ice being encountered has -1 strength" spend ability is **not implemented**. The engine has no generic "runner encounter-side paid ability" hook (the breaker-window loop in `run.js` only offers boost/break/clickbreak options sourced from a card's `breaker` definition) analogous to the corp's `runWindowAbility`. Counter accumulation on a successful central-server run (the observable half) is implemented and tested; spending the counters is deferred pending such a hook. |
+| 20010 | Force of Nature | program | done | |
+| 20011 | Imp | program | done | |
+| 20012 | Hemorrhage | program | done | |
 | 20013 | Mimic | program | pilot | |
-| 20014 | Morning Star | program | scripted (tests pending) | |
-| 20015 | Ice Carver | resource | scripted (tests pending) | |
-| 20016 | Liberated Account | resource | scripted (tests pending) | |
-| 20017 | Scrubber | resource | scripted (tests pending) | |
-| 20018 | Xanadu | resource | scripted (tests pending) | |
-| 20019 | Gabriel Santiago: Consummate Professional | identity | scripted (tests pending) | |
+| 20014 | Morning Star | program | done | |
+| 20015 | Ice Carver | resource | done | |
+| 20016 | Liberated Account | resource | done | |
+| 20017 | Scrubber | resource | done | |
+| 20018 | Xanadu | resource | done | |
+| 20019 | Gabriel Santiago: Consummate Professional | identity | done | This is the default runner identity used by `tests/helpers.js#makeGame`, so its "first successful HQ run each turn gains 2cr" trigger fires in most other batches' tests that run HQ with the default identity too (e.g. Sneakdoor Beta's redirect-to-HQ, and any card test that runs HQ) — accounted for explicitly in this batch's assertions. |
 | 20020 | Easy Mark | event | pilot | |
-| 20021 | Emergency Shutdown | event | scripted (tests pending) | |
-| 20022 | Forged Activation Orders | event | scripted (tests pending) | |
-| 20023 | Inside Job | event | scripted (tests pending) | |
-| 20024 | Special Order | event | scripted (tests pending) | |
-| 20025 | Doppelgänger | hardware | scripted (tests pending) | |
-| 20026 | HQ Interface | hardware | scripted (tests pending) | |
-| 20027 | Aurora | program | scripted (tests pending) | |
-| 20028 | Faerie | program | scripted (tests pending) | |
-| 20029 | Femme Fatale | program | scripted (tests pending) | |
-| 20030 | Peacock | program | scripted (tests pending) | |
-| 20031 | Pheromones | program | scripted (tests pending) | |
-| 20032 | Sneakdoor Beta | program | scripted (tests pending) | |
-| 20033 | Bank Job | resource | scripted (tests pending) | |
-| 20034 | Crash Space | resource | scripted (tests pending) | |
-| 20035 | Fall Guy | resource | scripted (tests pending) | |
-| 20036 | Mr. Li | resource | scripted (tests pending) | |
+| 20021 | Emergency Shutdown | event | done | |
+| 20022 | Forged Activation Orders | event | done | |
+| 20023 | Inside Job | event | done | |
+| 20024 | Special Order | event | done | |
+| 20025 | Doppelgänger | hardware | done | |
+| 20026 | HQ Interface | hardware | done | |
+| 20027 | Aurora | program | done | |
+| 20028 | Faerie | program | done | |
+| 20029 | Femme Fatale | program | done | |
+| 20030 | Peacock | program | done | |
+| 20031 | Pheromones | program | done | Deviation (documented in-code): the recurring pool is defined faithfully (`n` = hosted virus counters, `purposes:['hq-run']`), but no code path in `game.js`/`run.js` ever calls `pay()`/`canPay()` with the `'hq-run'` purpose (only `'icebreaker'`, `'trace'`, `'trash'`, `'virus-install'`, `'remove-tag'` are ever passed), so the pool can never actually be spent through the current engine. Counter accumulation on a successful HQ run (the observable half) is implemented and tested; spending is deferred pending an `'hq-run'` payment call site (e.g. wiring `doRun`'s HQ-specific costs, if any are added, to declare that purpose). |
+| 20032 | Sneakdoor Beta | program | done | The server-redirect happens before `onRunSuccessful` hooks fire (`run.js` reassigns `sid` and `s.run.server` first), so Gabriel Santiago's HQ trigger and HQ Interface's access bonus both correctly apply to a Sneakdoor-redirected run; verified in this batch's test. |
+| 20033 | Bank Job | resource | done | |
+| 20034 | Crash Space | resource | done | |
+| 20035 | Fall Guy | resource | done | Deviation (documented in-code): the printed "trash: gain 2 credits" ability has no click cost and is normally usable at any time; this engine only exposes installed-card abilities through the owner's action-menu (`script.actions`), so it's modeled as a `clicks:0` runner action — usable only during the Runner's action window, not truly "any time" (matches the Ronin/False Lead precedent from Batches A/B for anytime-timed abilities). |
+| 20036 | Mr. Li | resource | done | |
 
 ## Batch D (Shaper + neutral runner) — 24 cards
 
