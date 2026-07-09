@@ -9,6 +9,7 @@
 // Server ids: 'hq', 'rd', 'archives', 'remote1', 'remote2', ...
 import { createRng } from './rng.js';
 import { createLog } from './events.js';
+import { getScript } from '../cards/registry.js';
 
 export function createState(db, cfg) {
   const rng = createRng(cfg.seed ?? Date.now() % 2 ** 31);
@@ -21,9 +22,12 @@ export function createState(db, cfg) {
     const inst = {
       id: nextId++, code, card, zone,
       rezzed: false, faceup: false,
-      advancement: 0, counters: {}, // e.g. {virus: 2, credit: 3, agenda: 1}
+      advancement: 0, counters: {}, // e.g. {virus: 2, credit: 3, agenda: 1, recurring: 2}
       encounterStr: 0,     // temp strength mod, cleared after encounter
+      runStr: 0,           // temp strength mod, cleared at run end ("remainder of this run")
       brokenSubs: [],      // sub indexes broken this encounter
+      usedThisEncounter: false,
+      hostId: null,        // hosting (Dinosaurus, The Personal Touch)
       installedTurn: null,
     };
     insts[inst.id] = inst;
@@ -56,8 +60,14 @@ export function createState(db, cfg) {
     activePlayer: null,      // 'corp' | 'runner'
     phase: 'setup',
     winner: null, winReason: null,
-    accessBonus: {},         // Phase 3 hook: extra accesses per server
     run: null,               // active run object (see run.js)
+    flags: {
+      turn: {},              // reset at every turn start (both players' turns):
+                             // iceRezzed, gabrielHQ, runsMade:[], successfulRuns:[],
+                             // stolen:[], oncePerTurn:{code:true}
+      lastRunnerTurn: {},    // snapshot of flags.turn at end of runner turn:
+                             // {ranServers:[], successfulRuns:[], stolenPoints}
+    },
     corp: {
       identity: corpSide.identity.id,
       deck: corpSide.deck, hand: [], archives: [], score: [],
@@ -126,17 +136,30 @@ export function moveCard(g, id, toZone, opts = {}) {
   // leaving play resets in-play state
   if (opts.uninstall !== false && /^(corp|runner)-/.test(toZone)) {
     it.rezzed = false; it.advancement = 0; it.counters = {};
-    it.encounterStr = 0; it.brokenSubs = []; it.hostId = null;
+    it.encounterStr = 0; it.runStr = 0; it.brokenSubs = []; it.hostId = null;
   }
   return it;
 }
 
 export function memoryUsed(g) {
-  return g.state.runner.rig.program
-    .reduce((s, id) => s + (cardOf(g, id).memoryCost ?? 0), 0);
+  return g.state.runner.rig.program.reduce((s, id) => {
+    const it = inst(g, id);
+    if (it.hostId != null) {
+      const hostScript = getScript(inst(g, it.hostId).code);
+      if (hostScript?.hostedMemoryFree) return s; // Dinosaurus
+    }
+    return s + (it.card.memoryCost ?? 0);
+  }, 0);
 }
 export function memoryLimit(g) {
-  return g.state.runner.baseMemory; // Phase 3 hook: hardware mods (Dyson etc.)
+  let n = g.state.runner.baseMemory;
+  const idScript = getScript(cardOf(g, g.state.runner.identity).code);
+  if (idScript?.memoryMod) n += idScript.memoryMod;         // Chaos Theory
+  for (const id of g.state.runner.rig.hardware) {
+    const s = getScript(cardOf(g, id).code);
+    if (s?.memoryMod) n += s.memoryMod;                     // Dyson, consoles
+  }
+  return n;
 }
 export function handSize(g, player) {
   const p = g.state[player];

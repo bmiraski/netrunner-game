@@ -1,7 +1,6 @@
-// Pilot card scripts (Phase 2): one of each hook type to prove the design.
-// Phase 3 replaces this with full per-faction wave files.
-// NOTE: Battering Ram is simplified (breaks 1 sub per payment instead of
-// "up to 2") — fix in Phase 3; tracked in CARD_COVERAGE.md.
+// Exemplar card scripts, faithful to Revised Core text. The faction wave
+// files (waves-*.js) cover the rest of the set; codes here must not be
+// redefined there.
 import { define } from './registry.js';
 import * as fx from '../engine/effects.js';
 
@@ -33,7 +32,7 @@ export function registerPilots(db) {
   });
   define(code('Ice Wall'), {
     advanceable: true,
-    strengthBonus: (g, it) => it.advancement, // +1 str per advancement
+    strengthBonus: (g, it) => it.advancement,
     subroutines: [etr],
   });
   define(code('Hunter'), {
@@ -46,12 +45,16 @@ export function registerPilots(db) {
 
   // --- icebreakers ---
   define(code('Gordian Blade'), {
-    breaker: { types: ['code-gate'], boost: { cost: 1, amount: 1 }, breakCost: { cost: 1, count: 1 } },
+    breaker: { types: ['code-gate'],
+      boost: { cost: 1, amount: 1, duration: 'run' },
+      breakCost: { cost: 1, count: 1 } },
   });
   define(code('Battering Ram'), {
-    breaker: { types: ['barrier'], boost: { cost: 1, amount: 1 }, breakCost: { cost: 1, count: 1 } },
+    breaker: { types: ['barrier'],
+      boost: { cost: 1, amount: 1, duration: 'run' },
+      breakCost: { cost: 2, count: 2 } },
   });
   define(code('Mimic'), {
-    breaker: { types: ['sentry'], breakCost: { cost: 1, count: 1 } }, // no boost
+    breaker: { types: ['sentry'], breakCost: { cost: 1, count: 1 } },
   });
 }

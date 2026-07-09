@@ -2,12 +2,12 @@
 import { readFileSync } from 'node:fs';
 import { Game } from '../engine/game.js';
 import { createDb } from '../engine/db.js';
-import { registerPilots } from '../cards/pilots.js';
+import { registerAll } from '../cards/index.js';
 
 export const cardsJson = JSON.parse(
   readFileSync(new URL('../data/cards.json', import.meta.url), 'utf8'));
 const db = createDb(cardsJson);
-registerPilots(db);
+registerAll(db);
 
 export { db };
 

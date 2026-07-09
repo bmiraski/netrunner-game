@@ -85,7 +85,7 @@ export default [
   t.prefix('run:hq');
   // first approach (outermost ice): no jack-out offered, only the rez decision
   assert.equal(game.decision.runStep, 'rez-ice');
-  t.pick('no');
+  t.pick('done');
   assert.equal(lastEvent(game, 'ice-passed').data.rezzed, false);
   // second approach (innermost ice): jack-out is now offered
   assert.equal(game.decision.runStep, 'jack-out');
@@ -102,7 +102,7 @@ export default [
   // no cards have been discarded to archives yet -> a genuinely empty access
   t.prefix('run:archives');
   assert.equal(game.decision.runStep, 'rez-ice');
-  t.pick('no');
+  t.pick('done');
   assert.equal(lastEvent(game, 'ice-passed').data.rezzed, false);
   assert.equal(lastEvent(game, 'access-count').data.n, 0);
   assert.equal(lastEvent(game, 'run-successful').data.server, 'archives');
@@ -121,14 +121,14 @@ export default [
   const approach1 = lastEvent(game, 'approach-ice');
   assert.equal(approach1.data.position, 1);
   assert.equal(cardOf(g, approach1.data.iceId).title, 'Ice Wall');
-  t.pick('no');
+  t.pick('done');
 
   assert.equal(game.decision.runStep, 'jack-out');
   t.pick('continue');
   const approach2 = lastEvent(game, 'approach-ice');
   assert.equal(approach2.data.position, 0);
   assert.equal(cardOf(g, approach2.data.iceId).title, 'Wall of Static');
-  t.pick('no');
+  t.pick('done');
 
   assert.equal(lastEvent(game, 'run-end').data.successful, true);
 }],
@@ -140,7 +140,7 @@ export default [
   t.creditsOut('corp').discardFirst();
   const clicksBefore = game.state.runner.clicks;   // 4, fresh runner turn
   t.prefix('run:hq');                              // -1 click for the run itself
-  t.pick('rez');
+  t.prefix('rez');
   assert.equal(game.decision.options.length, 1);   // no breakers installed
   t.pick('continue');
   assert.equal(lastEvent(game, 'click-lost').data.who, 'runner');
@@ -161,7 +161,7 @@ export default [
   // break option becomes available and we can exercise the "no boost" check.
   inst(game.g, mimicId).encounterStr = 1;
   t.prefix('run:hq');
-  t.pick('rez');
+  t.prefix('rez');
   assert.ok(!game.decision.options.some(o => o.id.startsWith('boost:')));
   t.label('break "Trace 3');
   assert.ok(!game.decision.options.some(o => o.id.startsWith('boost:')));
@@ -178,7 +178,7 @@ export default [
   game.g.state.runner.credits = 10;
   t.label('Install Gordian Blade');
   t.prefix('run:hq');
-  t.pick('rez');
+  t.prefix('rez');
   assert.equal(game.decision.options.length, 1);
   assert.equal(game.decision.options[0].id, 'continue');
   t.pick('continue');
@@ -244,16 +244,18 @@ export default [
 }],
 
 ['uniqueness: installing a second unique copy trashes the first', () => {
-  const game = makeGame({ corp: filler(10), runner: [['Doppelgänger', 5], ['Sure Gamble', 5]] });
+  // uses Xanadu (unique resource); consoles like Doppelgänger are now blocked
+  // from a second install entirely by the "limit 1 console" rule
+  const game = makeGame({ corp: filler(10), runner: [['Xanadu', 5], ['Sure Gamble', 5]] });
   const t = driver(game).keepHands();
   t.creditsOut('corp').discardFirst();
   game.g.state.runner.credits = 10;
-  t.label('Install Doppelgänger');
-  const firstId = game.state.runner.rig.hardware[0];
-  t.label('Install Doppelgänger');
+  t.label('Install Xanadu');
+  const firstId = game.state.runner.rig.resource[0];
+  t.label('Install Xanadu');
   assert.equal(lastEvent(game, 'card-trashed').data.why, 'uniqueness');
   assert.equal(lastEvent(game, 'card-trashed').data.id, firstId);
-  assert.equal(game.state.runner.rig.hardware.length, 1);
+  assert.equal(game.state.runner.rig.resource.length, 1);
 }],
 
 ['bad publicity: bpCredits pool pays part of an access trash cost', () => {
@@ -300,7 +302,7 @@ export default [
   t.creditsOut('corp').discardFirst();
   game.g.state.runner.credits = 20;   // test setup: fund the link boost
   t.prefix('run:hq');
-  t.pick('rez');
+  t.prefix('rez');
   t.pick('continue');   // no breakers; the trace sub fires
   const corpCreditsBefore = game.state.corp.credits;
   const runnerCreditsBefore = game.state.runner.credits;

@@ -40,7 +40,7 @@ export default [
   t.label('Install Wall of Static').label('Protecting hq');
   t.creditsOut('corp').discardFirst();
   t.prefix('run:hq');                    // runner runs HQ
-  t.pick('rez');                         // corp rezzes Wall of Static (3cr)
+  t.prefix('rez');                         // corp rezzes Wall of Static (3cr)
   assert.equal(game.state.corp.credits, 7 - 3);
   t.pick('continue');                    // no breakers: let subs fire
   assert.equal(lastEvent(game, 'run-end').data.successful, false);
@@ -55,7 +55,7 @@ export default [
   game.g.state.runner.credits = 12;      // test setup: fund the runner
   t.label('Install Battering Ram');      // 2cr install
   t.prefix('run:hq');
-  t.pick('rez');
+  t.prefix('rez');
   // Wall of Static str 3, Ram base 1: boost twice, break the ETR sub
   t.label('+1 strength').label('+1 strength').label('break "End the run"');
   t.pick('continue');
@@ -117,7 +117,7 @@ export default [
   t.label('Install Hunter').label('Protecting hq');
   t.creditsOut('corp').discardFirst();
   t.prefix('run:hq');
-  t.pick('rez').pick('continue');
+  t.prefix('rez').pick('continue');
   t.num(0);                              // corp trace boost 0 (base 3)
   t.num(0);                              // runner link boost 0 (link 0)
   assert.equal(game.state.runner.tags, 1);
@@ -137,7 +137,7 @@ export default [
   game.g.state.runner.credits = 10;
   t.label('Install Battering Ram');
   t.prefix('run:rd');
-  t.pick('rez');
+  t.prefix('rez');
   // Ram str 1 vs Ice Wall str 2: one boost required before break appears
   t.label('+1 strength').label('break "End the run"').pick('continue');
   assert.equal(lastEvent(game, 'run-end').data.successful, true);

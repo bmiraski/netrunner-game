@@ -44,23 +44,101 @@ the ONLY way to move cards. Ice arrays: index 0 = innermost, push = outermost.
   remotes all content. Steal is mandatory; trashCost offers paid trash.
 
 ## Card scripts (cards/registry.js)
-`define(code, script)` — keyed by NRDB code. Hooks (all optional, `*` = generator):
-```
-onPlay*(g, {instId})      event/operation effect (cost already paid, click spent)
-canPlay(g)                extra playability predicate (else card unplayable!)
-subroutines: [{label, resolve*(g, {iceId})}]
-breaker: {types:[...], boost:{cost,amount}, breakCost:{cost,count}}
-strengthBonus(g, inst)    extra ice strength (e.g. Ice Wall advancements)
-advanceable: true         advanceable non-agenda
-onAccess*/onInstall*/onScore*   wired; more hooks land in Phase 3
-```
-IMPORTANT: events/operations WITHOUT a script never appear in action menus —
-Phase 3 must script all 33 of them. Installables work unscripted (vanilla).
-Register scripts via a `register*(db)` function pattern (see cards/pilots.js).
+`define(code, script)` — keyed by NRDB code. Hooks (all optional, `*` = generator
+receiving `(g, ctx)`). Hook sources scanned automatically (engine/hooks.js):
+corp identity, rezzed corp installed, scored agendas, runner identity, runner
+installed. Register scripts via a `register*(db)` pattern (see cards/pilots.js).
 
-To end a run from a subroutine: `g.state.run.ended = true`.
-Breaker subtype matching: lowercase, spaces→dashes ('Code Gate'→'code-gate');
-`types:['all']` matches anything (AI breakers).
+```
+// events & operations (UNSCRIPTED ONES ARE UNPLAYABLE — script all 33)
+onPlay*(g,{instId})        effect; cost + click already paid
+canPlay(g)                 extra play condition (SEA Source, Neural EMP)
+extraClickCost: 1          Celebrity Gift / Singularity additional click
+
+// ice
+subroutines: [{label, resolve*(g,{iceId})}]   end run: g.state.run.ended = true
+onEncounter*(g,{iceId})    Tollbooth, Data Raven, Pop-up Window
+activeSubIndices(g,it)     Hive — which printed subs are live
+strengthBonus(g,it)        Ice Wall/Hadrian's/Shadow adv counters; Wraparound
+clickBreak: true           bioroid "lose click to break 1 sub"
+blocksAI: true             Swordsman
+advanceable: true          advanceable non-agendas (also assets GRNDL etc.)
+
+// icebreakers
+breaker: {types:['barrier'|'code-gate'|'sentry'|'all'],
+          boost:{cost,amount,duration:'run'|'encounter'},
+          breakCost:{cost, count:N|'all'}}
+onEncounterEndIfUsed*(g,{instId})   Faerie trash, Crypsis counter upkeep
+bypassAbility: {req(g,it,iceId), cost(g,iceId), effect not needed}  Femme
+
+// triggers
+onTurnStart*(g,{instId})   PAD, Adonis, Aesop's, Darwin (owner's turn only)
+onRunSuccessful*(g,{server,instId})       Gabriel, Datasucker, Hemorrhage
+onRunSuccessfulHere*(g,{server,instId})   upgrades: Ash, Bernice, Hokusai
+onRunEnd*(g,{server,successful,instId})   DRT, Doppelgänger (queue follow-up:
+                                          g.state.run.followUp = [{server}])
+onPlayOperation*(g,{operationId})         Weyland BaBW (check subtypes)
+onAgendaScored*/onAgendaStolen*(g,{agendaId})  Jinteki: PE
+onScore*/onSteal*(g,{instId})   this agenda scored/stolen (Hostile Takeover,
+                                Atlas/Vitruvius/Nisei counters)
+onRez*(g,{instId})         Elizabeth Mills
+onInstall*(g,{instId})     Bank Job load, Imp counters, Rabbit Hole search
+onAccess*(g,{instId,server})   ambushes (Snare!, Junebug) — corp pay decision
+onTraceResolved*(g,{success,instId,ctx})   Spinal Modem
+
+// numeric modifiers (plain functions returning a number)
+rezCostMod(g,it,target)    Xanadu +1 ice, Reina first-ice +1 (use
+                           g.state.flags.turn.iceRezzed===0), Braintrust -1
+iceStrengthMod(g,it,ice)   Ice Carver (check g.state.run?.encounterIce===ice.id)
+breakerStrengthMod(g,it,breaker)  Personal Touch (breaker.hostId===it.id? no —
+                           PT is hosted ON breaker: check breaker.id===it.hostId)
+damageMod(g,it,type)       The Cleaners (+1 meat, corp scored)
+linkMod(g,it)              Dyson Mem Chip, Rabbit Hole
+memoryMod: 1               +MU hardware/identities (plain number)
+hqAccessMod/rdAccessMod(g,it)   HQ Interface / R&D access bonuses
+advReqMod(g,it)            agenda advancement requirement modifier
+bonusPoints(g,it)          Project Beale extra points
+
+// economy / pools
+recurring: {n, purposes:[...]}  refilled each owner turn; purposes:
+   'icebreaker','trace','trash','virus-install','hq-run','remove-tag'
+   (n may be a function(g,it) — Pheromones)
+
+// installed-card click abilities (appear in action menus)
+actions: [{label|label(g,it), clicks=1, credits=0, trashSelf, once,
+           req(g,it), effect*(g,{instId})}]
+   Magnum Opus, Armitage, Liberated, Melange (clicks:3), Ronin, GRNDL...
+
+// prevention / protection
+preventDamage: {types:['meat'], amount:3, trashSelf:true}   Crash Space
+preventTrash:  {types:['resource','program','hardware']}    Fall Guy, Sac Con
+
+// access / steal shaping
+stealCost: {credits:5} | {clicks:1}    Red Herrings, Strongbox (persistent
+   after mid-run trash: push onto g.state.run.extraStealCosts in a trash hook)
+accessAbility: {label, req(g,it,{accessedId}), effect*}     Imp
+insteadOfBreach: {label, appliesTo(g,sid), effect*}         Bank Job
+runWindowAbility: {label(g,it), req(g,it), effect*}         Nisei counter,
+   Himitsu-Bako (corp-side, offered during run windows)
+
+// hosting / consoles
+memoryMod, canHostBreaker:true, hostedMemoryFree:true       Dinosaurus
+hostOn (via onInstall assigning it.hostId)                  The Personal Touch
+Consoles: 'Console' subtype auto-enforced (limit 1)
+
+// misc engine services (import from engine/effects.js and engine/hooks.js)
+fx.gainCredits/pay/canPay(g,player,n,purpose)  fx.draw  fx.trash
+fx.trashWithPrevention*  fx.damage*(g,type,n,why,{unpreventable})
+fx.addTags/removeTag  fx.addBadPublicity/removeBadPublicity
+fx.trace*(g,base,ctx)  fx.expose/derez  fx.rezFx*(g,id,{ignoreCost})
+fx.scoreAgendaFx*/stealAgendaFx*/forfeit  fx.searchAndPick*/shuffleDeck
+hooks.oncePerTurn(g,key)  corpInstall*/runnerInstall*(g,id,{free}) from game.js
+doRun*(g,sid,mods) from run.js — run-event mods: accessBonus,
+   insteadOnSuccess*/insteadLabel, bypassFirstEncounter, hostedCredits,
+   changeServerOnSuccess, onEnd*, accessAbilities[]
+Useful flags: g.state.flags.turn.{runsMade,successfulRuns,stolen,iceRezzed,
+   tinkered}  g.state.flags.lastRunnerTurn.{ranServers,successfulRuns,stolenPoints}
+```
 
 ## Tests (tests/)
 `node tests/run-tests.js` (node ≥18). Each `*.test.js` default-exports
@@ -71,10 +149,12 @@ setup is sanctioned (credits, moveCard); assert outcomes via the event log
 (`lastEvent(game, type)`). Remember: corp hand is 6 after mandatory draw —
 turns with no plays end in a discard decision.
 
-## Known simplifications (fix in Phase 3, tracked in CARD_COVERAGE.md)
-- Battering Ram breaks 1 sub per payment (card says "up to 2")
-- Paid-ability windows are minimal (breakers + rez windows only)
-- Corp can only rez the approached ice / attacked server's content mid-run
-- No on-successful-run / turn-start-trigger hooks wired yet (PAD Campaign
-  doesn't pay out, identities do nothing, etc.)
-- Region/console limits not enforced (no such cards scripted yet)
+## Known engine-level simplifications (documented; card notes in CARD_COVERAGE.md)
+- Recurring-credit / bad-publicity / Stimhack pools auto-spend before real
+  credits (no player choice of source)
+- Trigger order is fixed (hook-source scan order), no player ordering choice
+- Corp mid-run windows: rez approached ice, rez attacked server content, and
+  scripted runWindowAbility cards only
+- "May" triggers that are strictly beneficial auto-resolve (PAD, Gabriel)
+- Region limit not enforced (Hokusai Grid is the only region; deck limits
+  make duplicates in one server impossible anyway except by install choice)
