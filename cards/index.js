@@ -1,7 +1,9 @@
 // Central card-script registration. Wave files add themselves here.
 import { registerPilots } from './pilots.js';
+import { registerWavesA } from './waves-a.js';
+import { registerWavesB } from './waves-b.js';
 
-const waves = [registerPilots];
+const waves = [registerPilots, registerWavesA, registerWavesB];
 // WAVE REGISTRATIONS (batch agents: import your registerWavesX above and push
 // it here, keeping alphabetical batch order A, B, C, D):
 

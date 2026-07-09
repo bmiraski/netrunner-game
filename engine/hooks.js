@@ -62,7 +62,8 @@ export function poolsFor(g, player, purpose) {
     if (s.it.card.side !== player) continue;
     const r = s.script.recurring;
     const purposes = typeof r.purposes === 'function' ? r.purposes(g, s.it) : r.purposes;
-    if (purpose && !purposes.includes(purpose)) continue;
+    // restricted pools only apply when the payment declares a matching purpose
+    if (!purposes.includes(purpose)) continue;
     if ((s.it.counters.recurring ?? 0) > 0) pools.push(s.it);
   }
   return pools;

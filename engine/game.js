@@ -218,13 +218,14 @@ function* corpAction(g) {
   }
 }
 
-export function* corpInstall(g, handId, { free = false } = {}) {
+export function* corpInstall(g, handId, { noClick = false, noCost = false } = {}) {
+  const free = noClick && noCost; // legacy
   const s = g.state, card = cardOf(g, handId);
   const targets = [];
   if (card.type === 'ice') {
     for (const sid of serverIds(g)) {
       const cost = s.corp.servers[sid].ice.length;
-      if (free || fx.canPay(g, 'corp', cost)) targets.push(opt(`t:${sid}`, `Protecting ${sid} (${free ? 0 : cost}cr)`));
+      if (noCost || fx.canPay(g, 'corp', cost)) targets.push(opt(`t:${sid}`, `Protecting ${sid} (${noCost ? 0 : cost}cr)`));
     }
     targets.push(opt('t:new', 'Protecting a NEW remote server'));
   } else if (card.type === 'upgrade') {
@@ -243,7 +244,7 @@ export function* corpInstall(g, handId, { free = false } = {}) {
   if (sid === 'new') sid = newRemote(g);
 
   if (card.type === 'ice') {
-    if (!free) fx.pay(g, 'corp', s.corp.servers[sid].ice.length, 'install ice');
+    if (!noCost) fx.pay(g, 'corp', s.corp.servers[sid].ice.length, 'install ice');
     moveCard(g, handId, `server-ice:${sid}`); // push = outermost
   } else {
     if (card.type !== 'upgrade') {
@@ -255,7 +256,7 @@ export function* corpInstall(g, handId, { free = false } = {}) {
   }
   const it = inst(g, handId);
   it.faceup = false; it.rezzed = false; it.installedTurn = s.turn;
-  if (!free) s.corp.clicks--;
+  if (!noClick) s.corp.clicks--;
   fx.emit(g, 'corp-installed', { id: handId, server: sid, type: card.type });
   return true;
 }
@@ -336,7 +337,7 @@ function consoleBlocked(g, card) {
   return installedRunner(g).some(id => cardOf(g, id).subtypes.includes('Console'));
 }
 
-export function* runnerInstall(g, handId, { free = false } = {}) {
+export function* runnerInstall(g, handId, { noClick = false, noCost = false, discount = 0 } = {}) {
   const s = g.state, card = cardOf(g, handId);
   if (card.type === 'program') {
     while (memoryUsed(g) + (card.memoryCost ?? 0) > memoryLimit(g)) {
@@ -353,13 +354,13 @@ export function* runnerInstall(g, handId, { free = false } = {}) {
       if (cardOf(g, ex).code === card.code) fx.trash(g, ex, 'uniqueness');
     }
   }
-  const cost = free ? 0 : Math.max(0, (card.cost ?? 0) + (s.flags.installDiscount ?? 0));
+  const cost = noCost ? 0 : Math.max(0, (card.cost ?? 0) - discount);
   if (cost) fx.pay(g, 'runner', cost, `install ${card.title}`,
     card.subtypes.includes('Virus') ? 'virus-install' : undefined);
   moveCard(g, handId, `rig-${card.type}`);
   const it = inst(g, handId);
   it.faceup = true; it.rezzed = true; it.installedTurn = s.turn;
-  if (!free) s.runner.clicks--;
+  if (!noClick) s.runner.clicks--;
   fx.emit(g, 'runner-installed', { id: handId, code: card.code, title: card.title });
   // hosting: offer to host new non-AI icebreakers on a host with capacity
   const script = getScript(card.code);

@@ -377,6 +377,9 @@ export function* accessCard(g, id, sid) {
         [opt('trash', `Trash (${it.card.trashCost}cr)`), opt('leave', 'Leave it')], { runStep: 'access-trash' });
       if (t === 'trash') {
         pay(g, 'runner', it.card.trashCost, `trash ${it.card.title}`, 'trash');
+        // Persistent abilities (Strongbox, Red Herrings) survive the trash
+        const sc = getScript(it.code)?.stealCost;
+        if (sc && s.run && getScript(it.code)?.persistent) s.run.extraStealCosts.push(sc);
         trash(g, id, 'accessed');
       }
     }
