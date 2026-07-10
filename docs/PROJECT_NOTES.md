@@ -8,14 +8,29 @@
   deterministic engine; 32 passing tests. Architecture: `docs/ENGINE.md`.
 - **Phase 3 (card abilities): COMPLETE** — 2026-07-09. All 132/132 cards
   scripted (cards/pilots.js + waves-a/b/c/d.js) with per-card tests.
-  Suite: 163 passing. Per-card status + every deviation: docs/CARD_COVERAGE.md.
-  Known deferred items (need small engine hooks, revisit in Phase 4/9):
+  Per-card status + every deviation: docs/CARD_COVERAGE.md.
+  Known deferred items (need small engine hooks, revisit in Phase 9):
   Datasucker counter SPENDING (needs runner encounter paid-ability hook),
   Pheromones pool spending (needs 'hq-run' payment purpose call site),
   Test Run return-to-stack (needs delayed-trigger facility),
-  Archer rez requires scored agenda (not gated — AI must check before rezzing).
-- Next: **Phase 4 — AI opponents** (see BUILD_PLAN.md). Corp + Runner
-  heuristic AIs answering the engine's decision protocol; then precon decks.
+  Archer rez requires scored agenda (not engine-gated — the Corp AI checks;
+  the three partially-implemented cards are EXCLUDED from precon decks).
+- **Phase 4 (AI opponents): COMPLETE** — 2026-07-09. Architecture: docs/AI.md.
+  - ai/: view.js (imperfect-info discipline), base.js (routing + fallback +
+    difficulty LEVELS), corp.js, runner.js, controller.js (AIController +
+    autoplay), decks.js (7 precon decks, one per identity, core-box legal).
+  - Two levels (standard/hard); AIs deterministic (own seeded rng — never
+    g.rng); any AI handler error falls back to a safe legal answer
+    (game.aiErrors records it — soak asserts none).
+  - Suite: 227 passing (163 engine/cards + 44 decks + 16 AI unit + 4 soak).
+    tools/soak.js: 120-game matrix clean — 0 stalls, 0 aiErrors, 0 deck-outs,
+    corp ~43-58% depending on levels; every matchup playable. Balance
+    outliers noted in docs/AI.md (Jinteki-vs-Gabe corp-skewed via flatline,
+    Weyland-vs-Reina runner-skewed) — tune in Phase 9.
+- Next: **Phase 5 — UI** (see BUILD_PLAN.md). Board, hand, run visualization,
+  action prompts driven by the same decision protocol the AI answers.
+  AIController is human-seat aware: ctl.run() answers AI decisions and stops
+  when a human decision is pending (usage snippet in docs/AI.md).
 
 ## GitHub (sync at the end of every step)
 - Repo: `bmiraski/netrunner-game` (main). Access token: `.git-token` file in
@@ -63,11 +78,15 @@ docs/
   BUILD_PLAN.md       ← 9-phase roadmap (key project document)
   PROJECT_NOTES.md    ← this file
   ENGINE.md           ← engine architecture + how to script cards / write tests
+  AI.md               ← AI architecture, difficulty knobs, tuning list
+  CARD_COVERAGE.md    ← per-card implementation status + deviations
 engine/               ← rules engine (rng, events, state, decisions, effects,
                         game, run, db) — see ENGINE.md
-cards/                ← registry.js + pilots.js (11 pilot scripts)
-tests/                ← run-tests.js + core.test.js + coverage.test.js (32 tests)
-ai/ ui/ tutorial/ analysis/ stats/   ← empty, Phases 4+
+cards/                ← registry.js + pilots.js + waves-a/b/c/d.js (132 cards)
+ai/                   ← view/base/corp/runner/controller/decks — see AI.md
+tests/                ← run-tests.js + 9 *.test.js files (227 tests)
+tools/                ← soak.js (AI-vs-AI matchup matrix; exit 1 on stall/error)
+ui/ tutorial/ analysis/ stats/   ← empty, Phases 5+
 ```
 
 ## Card data facts
@@ -93,9 +112,19 @@ ai/ ui/ tutorial/ analysis/ stats/   ← empty, Phases 4+
 - Write unit tests in `tests/` as engine features land, runnable via `node` in sandbox
 - Update the Status section of this file at the end of every working session
 
-## Phase 3 kickoff pointers (next session)
-- Read `docs/ENGINE.md` first — it explains the card-script hook API and test
-  conventions, and lists engine hooks that still need wiring
-- Scripting all 132 cards is ideal subagent grunt work: batch by faction,
-  every batch must ship with tests, run `node tests/run-tests.js` green
-- Rules Reference + rulebook PDFs are in project knowledge (files/ folder)
+## Phase 5 kickoff pointers (next session)
+- Read `docs/ENGINE.md` (decision protocol) + `docs/AI.md` (AIController
+  human-seat pattern) first. The UI is a decision renderer: show
+  `game.decision`, call `game.choose(answer)`, then `ctl.run()` to let the
+  AI seat respond; repaint from the event log (`game.log`).
+- Board layout per BUILD_PLAN Phase 5: servers+ice, rig, hands, trackers,
+  run visualization, scrollable log, legal-action highlighting, dark theme.
+- Card text markup must render `[credit] [click] [subroutine]` etc. as
+  symbols (see Card data facts above).
+- Single-file deliverable: keep source modular; bundling to netrunner.html
+  is Phase 9. During dev a tiny local server or ES-module <script> works
+  from the folder directly.
+- Good subagent grunt work: card frame CSS per faction, symbol substitution,
+  log-entry-to-text rendering table. Keep engine/ai untouched.
+- Verify with `node tests/run-tests.js` (227 green) + `node tools/soak.js 5`
+  after ANY engine/ai change.
