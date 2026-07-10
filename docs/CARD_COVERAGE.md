@@ -130,27 +130,27 @@ Simplifications MUST be noted here. Wave files: cards/waves-<a|b|c|d>.js
 
 | Code | Title | Type | Status | Notes |
 |------|-------|------|--------|-------|
-| 20037 | Chaos Theory: Wünderkind | identity | pending | |
-| 20038 | Diesel | event | pending | |
-| 20039 | Indexing | event | pending | |
-| 20040 | Modded | event | pending | |
-| 20041 | Notoriety | event | pending | |
-| 20042 | Test Run | event | pending | |
-| 20043 | The Maker’s Eye | event | pending | |
-| 20044 | Tinkering | event | pending | |
-| 20045 | Dinosaurus | hardware | pending | |
-| 20046 | Rabbit Hole | hardware | pending | |
-| 20047 | The Personal Touch | hardware | pending | |
+| 20037 | Chaos Theory: Wünderkind | identity | done | |
+| 20038 | Diesel | event | done | |
+| 20039 | Indexing | event | done | Reordering the top 5 of R&D is done via a direct splice on `g.state.corp.deck` (reordering within the same zone) rather than `moveCard`, since `moveCard` models zone-to-zone transfers, not in-place reordering. |
+| 20040 | Modded | event | done | |
+| 20041 | Notoriety | event | done | |
+| 20042 | Test Run | event | done | Deviation (documented in-code): the printed "when your turn ends, if that program has not been uninstalled, add it to the top of your stack" clause is **not implemented**. The engine has no generic "schedule an effect for a future turn boundary" facility (`onTurnStart` hooks only scan currently-installed sources); the installed program simply stays installed permanently. A `counters.testRun` marker is set on the installed instance as a documentation breadcrumb only — nothing reads it. This is a known, isolated engine-level gap; tested explicitly (the program remains installed into the following turn). |
+| 20043 | The Maker’s Eye | event | done | |
+| 20044 | Tinkering | event | done | |
+| 20045 | Dinosaurus | hardware | done | |
+| 20046 | Rabbit Hole | hardware | done | |
+| 20047 | The Personal Touch | hardware | done | Deviation (documented in-code): the printed "install only on an icebreaker" restriction is not enforced as an install-target gate (no generic install-target-restriction hook for hardware exists); instead the target icebreaker is chosen via `onInstall`. If no icebreaker is installed, the install fizzles (emits `search-whiffed`) rather than being blocked outright. |
 | 20048 | Battering Ram | program | pilot | |
 | 20049 | Gordian Blade | program | pilot | |
-| 20050 | Magnum Opus | program | pending | |
-| 20051 | Pipeline | program | pending | |
-| 20052 | Aesop’s Pawnshop | resource | pending | |
-| 20053 | All-nighter | resource | pending | |
-| 20054 | Sacrificial Construct | resource | pending | |
-| 20055 | Infiltration | event | pending | |
+| 20050 | Magnum Opus | program | done | |
+| 20051 | Pipeline | program | done | |
+| 20052 | Aesop’s Pawnshop | resource | done | |
+| 20053 | All-nighter | resource | done | |
+| 20054 | Sacrificial Construct | resource | done | |
+| 20055 | Infiltration | event | done | |
 | 20056 | Sure Gamble | event | pilot | |
-| 20057 | Dyson Mem Chip | hardware | pending | |
-| 20058 | Crypsis | program | pending | |
-| 20059 | Armitage Codebusting | resource | pending | |
-| 20060 | Underworld Contact | resource | pending | |
+| 20057 | Dyson Mem Chip | hardware | done | |
+| 20058 | Crypsis | program | done | |
+| 20059 | Armitage Codebusting | resource | done | |
+| 20060 | Underworld Contact | resource | done | |

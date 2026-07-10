@@ -1,6 +1,6 @@
 # Netrunner vs. Computer — Build Plan
 
-> **Status:** Phases 1–2 complete (2026-07-08). Card data verified (132 cards / 247 copies); deterministic rules engine with 32 passing tests (`docs/ENGINE.md`). Code on GitHub: `bmiraski/netrunner-game`. Read `PROJECT_NOTES.md` for current state and environment notes before starting work. Next: Phase 3.
+> **Status:** Phases 1–3 complete (2026-07-09). All 132 Revised Core cards scripted and tested against the deterministic rules engine — 163 passing tests (`docs/ENGINE.md`, `docs/CARD_COVERAGE.md`). Code on GitHub: `bmiraski/netrunner-game`. Read `PROJECT_NOTES.md` for current state before starting work. Next: Phase 4 (AI opponents).
 
 ## Decisions (locked)
 - **Platform:** Browser app — single self-contained HTML/JS file. Double-click to play on Mac; no install, no server.

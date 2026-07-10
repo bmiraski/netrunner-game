@@ -6,16 +6,16 @@
 - **Phase 1 (card data pipeline): COMPLETE** — 2026-07-08
 - **Phase 2 (rules engine): COMPLETE** — 2026-07-08. Generator-based
   deterministic engine; 32 passing tests. Architecture: `docs/ENGINE.md`.
-- **Phase 3 (card abilities): IN PROGRESS** — hook layer done; batches A (HB+Jinteki,
-  32 cards) and B (NBN+Weyland+neutral corp, 34) done with tests; batch C
-  (Anarch+Criminal, 34) done with tests; batch D (Shaper+neutral runner,
-  21 cards) scripted in cards/waves-d.js — ALL 132/132 CARDS SCRIPTED —
-  but tests/cards-d.test.js NOT YET WRITTEN. Suite: 142 passing. See docs/CARD_COVERAGE.md for per-card status/deviations.
-- Original phase plan below:
-  Priority order: (a) wire missing engine hooks (turn-start triggers,
-  on-successful-run, paid-ability windows), (b) Wave A vanilla/simple cards,
-  (c) coverage checklist in docs/CARD_COVERAGE.md. All 33 events/operations
-  MUST be scripted or they can't be played at all.
+- **Phase 3 (card abilities): COMPLETE** — 2026-07-09. All 132/132 cards
+  scripted (cards/pilots.js + waves-a/b/c/d.js) with per-card tests.
+  Suite: 163 passing. Per-card status + every deviation: docs/CARD_COVERAGE.md.
+  Known deferred items (need small engine hooks, revisit in Phase 4/9):
+  Datasucker counter SPENDING (needs runner encounter paid-ability hook),
+  Pheromones pool spending (needs 'hq-run' payment purpose call site),
+  Test Run return-to-stack (needs delayed-trigger facility),
+  Archer rez requires scored agenda (not gated — AI must check before rezzing).
+- Next: **Phase 4 — AI opponents** (see BUILD_PLAN.md). Corp + Runner
+  heuristic AIs answering the engine's decision protocol; then precon decks.
 
 ## GitHub (sync at the end of every step)
 - Repo: `bmiraski/netrunner-game` (main). Access token: `.git-token` file in
