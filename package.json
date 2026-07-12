@@ -4,6 +4,10 @@
   "type": "module",
   "description": "Android: Netrunner (Revised Core) vs computer - engine and game",
   "scripts": {
-    "test": "node tests/run-tests.js"
+    "test": "node tests/run-tests.js",
+    "build": "node tools/bundle.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.21.5"
   }
 }

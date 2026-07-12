@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Netrunner — Revised Core</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+<div id="setup" class="setup">
+  <h1>NETRUNNER</h1>
+  <div class="setup-sub">Revised Core Set &middot; vs computer</div>
+  <div class="setup-grid">
+    <fieldset class="setup-block">
+      <legend>Play as</legend>
+      <label><input type="radio" name="side" value="runner" checked> Runner</label>
+      <label><input type="radio" name="side" value="corp"> Corp</label>
+      <label><input type="radio" name="side" value="watch"> Watch AI vs AI</label>
+    </fieldset>
+    <fieldset class="setup-block">
+      <legend id="lbl-corp-deck">Corp deck</legend>
+      <select id="sel-corp-deck"></select>
+    </fieldset>
+    <fieldset class="setup-block">
+      <legend id="lbl-runner-deck">Runner deck</legend>
+      <select id="sel-runner-deck"></select>
+    </fieldset>
+    <fieldset class="setup-block">
+      <legend>AI difficulty</legend>
+      <select id="sel-level">
+        <option value="standard" selected>Standard</option>
+        <option value="hard">Hard</option>
+      </select>
+    </fieldset>
+    <fieldset class="setup-block">
+      <legend>Seed (blank = random)</legend>
+      <input id="inp-seed" type="text" placeholder="random">
+    </fieldset>
+  </div>
+  <div id="deck-desc" class="deck-desc"></div>
+  <button id="btn-start" class="btn btn-primary btn-big">Jack in</button>
+</div>
+
+<div id="table" style="display:none">
+  <div class="layout">
+    <div class="board">
+      <div id="corp-zone"></div>
+      <div id="mid-zone"></div>
+      <div id="runner-zone"></div>
+    </div>
+    <div class="sidebar">
+      <div id="watch-controls" style="display:none" class="watch-controls">
+        <button id="btn-step1" class="btn">Step</button>
+        <button id="btn-step25" class="btn">Step 25</button>
+        <button id="btn-stepturn" class="btn">Next turn</button>
+      </div>
+      <div id="prompt" class="prompt"></div>
+      <div id="inspector" class="inspector"></div>
+      <div id="log" class="log"></div>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="./main.js"></script>
+</body>
+</html>
