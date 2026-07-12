@@ -27,28 +27,27 @@
     corp ~43-58% depending on levels; every matchup playable. Balance
     outliers noted in docs/AI.md (Jinteki-vs-Gabe corp-skewed via flatline,
     Weyland-vs-Reina runner-skewed) — tune in Phase 9.
-- **Phase 5a (UI checkpoint): COMPLETE** — 2026-07-11. Architecture: docs/UI.md.
-  - ui/: playable browser UI as a pure decision renderer — setup screen
-    (side/deck/difficulty/seed, plus watch-AI-vs-AI mode), board (servers+ice,
-    rig, hands, trackers, run banner), prompt panel, scrollable log, card
-    inspector, legal-action highlighting (option ids -> board targets),
-    dark cyberpunk theme. Perspective filtering hides corp hidden info from
-    the runner viewer in BOTH board and log (leak-tested).
+- **Phase 5 (UI): COMPLETE** — 2026-07-11. Architecture: docs/UI.md.
+  - 5a checkpoint: playable browser UI as a pure decision renderer — setup
+    screen (side/deck/difficulty/seed, plus watch-AI-vs-AI mode), board
+    (servers+ice, rig, hands, trackers), prompt panel, scrollable log, card
+    inspector, legal-action highlighting (option ids -> board targets), dark
+    cyberpunk theme. Perspective filtering hides corp hidden info from the
+    runner viewer in BOTH board and log (leak-tested).
+  - User feedback round: setup-screen alignment, sticky CARD DETAILS panel
+    with glow flash, auto-inspect of every played/revealed card (play,
+    install, rez, encounter, access, score/steal).
+  - 5b polish: run panel with per-subroutine broken/unbroken state + pulsing
+    current-ice marker, turn banner + click pips + active-player glow +
+    effective link (baseLink + linkBonus), keyboard controls (1-9 / Enter /
+    Escape, works on popovers, number chips on buttons), hover preview in
+    inspector, subtype lines on tiles, paced AI advance (~110ms/decision so
+    AI turns animate; window.__PACE__=0 for synchronous tests).
   - tools/bundle.js (esbuild) builds the committed double-clickable
-    netrunner.html (~0.3 MB, cards.json + CSS + JS inlined). npm run build.
-  - Verification: suite now 232 (added tests/ui.test.js: log coverage over
-    full soak games x 3 viewers, markup on all 132 cards, option-map, decks).
-    tools/ui-smoke.js drives the BUILT bundle in jsdom through complete games
-    (runner / corp / watch seats) by clicking rendered buttons.
-- **Phase 5 (UI): COMPLETE** — 2026-07-11. Checkpoint 5a + polish 5b + user
-  feedback round (setup alignment, CARD DETAILS panel with flash, auto-inspect
-  of every played/revealed card). 5b added: run panel with per-subroutine
-  broken/unbroken state + pulsing current-ice marker, turn banner + click
-  pips + active-player glow + effective link, keyboard controls (1-9 / Enter /
-  Escape, works on popovers), hover preview in inspector, subtype lines on
-  tiles, paced AI advance (~110ms/decision, window.__PACE__=0 for tests).
-  All verified: 232 tests + jsdom full-game click-throughs (sync AND paced).
-  User decision: remaining bugs found in play are handled in later phases.
+    netrunner.html (~0.3 MB). Verification: suite 232 (tests/ui.test.js);
+    tools/ui-smoke.js jsdom full-game click-throughs (runner/corp/watch,
+    asserts details panel populates); paced mode separately verified.
+  - User decision: remaining bugs found in play are handled in later phases.
 - Next: **Phase 6 — Tutorial mode** (BUILD_PLAN): scripted first game (fixed
   decks/draws) with overlay callouts driven by the engine's decision protocol,
   then a practice mode with hints on demand. The tutorial should reuse the
@@ -140,18 +139,21 @@ tutorial/ analysis/ stats/   ← empty, Phases 6+
 - Write unit tests in `tests/` as engine features land, runnable via `node` in sandbox
 - Update the Status section of this file at the end of every working session
 
-## Phase 5b pointers (next session)
-- Checkpoint build (Phase 5a) is live: read `docs/UI.md` first — architecture,
-  perspective rules, option-id -> board-target mapping, and the remaining
-  polish list at the end of that file. Await/collect user feedback on the
-  checkpoint before large styling changes.
-- Rebuild + verify cycle after ANY ui/ change:
-  `npm run build` (or `ESBUILD=... node tools/bundle.js`) then
-  `node tools/ui-smoke.js` (jsdom full-game click-through; needs jsdom —
-  in sandbox: `npm install jsdom --prefix /tmp/jsd` + `JSDOM_DIR=/tmp/jsd`,
-  esbuild: `npm install esbuild --prefix /tmp/esb` +
+## Phase 6 pointers (next session)
+- Read docs/UI.md + docs/ENGINE.md first. Tutorial = fixed seed + fixed decks
+  + a script that (a) answers some decisions automatically, (b) blocks until
+  the player makes the TAUGHT choice, (c) shows overlay callouts keyed on
+  decision context tags (actionMenu, runStep, scoreWindow, ...) and log events.
+- The engine is already deterministic: pick a seed where the scripted first
+  game showcases install/run/ice/access/score/steal/tags/damage cleanly
+  (search seeds with a quick node script against gameConfig decks).
+- Keep tutorial code in tutorial/, engine/ai untouched. UI hooks needed: an
+  overlay layer + a way to restrict clickable options (filter decision
+  options or intercept app.answer).
+- Rebuild + verify cycle after ANY ui/ change: `npm run build` then
+  `node tools/ui-smoke.js` (in sandbox: `npm install jsdom --prefix /tmp/jsd`
+  + `JSDOM_DIR=/tmp/jsd`, `npm install esbuild --prefix /tmp/esb` +
   `ESBUILD=/tmp/esb/node_modules/.bin/esbuild`; npm DOES work in the sandbox).
 - `node tests/run-tests.js` (232 green) + `node tools/soak.js 5` after ANY
   engine/ai change. New engine event types must be added to `ui/logtext.js`
   (ui.test.js fails on unknown types — by design).
-- Keep engine/ai untouched for pure UI work; UI reads state, never mutates.
