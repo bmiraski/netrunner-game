@@ -118,6 +118,9 @@ docs/
   ENGINE.md           ← engine architecture + how to script cards / write tests
   AI.md               ← AI architecture, difficulty knobs, tuning list
   CARD_COVERAGE.md    ← per-card implementation status + deviations
+  UI.md               ← UI architecture (Phase 5): decision renderer, perspective
+                        rules, run panel, keyboard, pacing
+  TUTORIAL.md         ← tutorial architecture (Phase 6): guided script, callouts, hints
 engine/               ← rules engine (rng, events, state, decisions, effects,
                         game, run, db) — see ENGINE.md
 cards/                ← registry.js + pilots.js + waves-a/b/c/d.js (132 cards)
