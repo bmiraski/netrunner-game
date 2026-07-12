@@ -240,6 +240,49 @@ function renderLog(g, viewer, logEl) {
   logEl.scrollTop = logEl.scrollHeight;
 }
 
+// --- tutorial callout ---------------------------------------------------------
+function renderCallout(app, calloutEl) {
+  const tut = app.tutorial;
+  if (!tut) { calloutEl.style.display = 'none'; return; }
+  calloutEl.style.display = '';
+  calloutEl.innerHTML = '';
+
+  // queued one-time event callouts take priority (dismissable)
+  const ev = app.eventCallouts[0];
+  if (ev) {
+    calloutEl.appendChild(h(`<div class="co-box co-event">
+      <div class="co-title">${escapeHtml(ev.title)}</div>
+      <div class="co-text">${escapeHtml(ev.text)}</div>
+    </div>`));
+    const ok = h('<button class="btn btn-primary co-ok">Got it</button>');
+    ok.addEventListener('click', () => { app.eventCallouts.shift(); renderCallout(app, calloutEl); });
+    calloutEl.querySelector('.co-box').appendChild(ok);
+    return;
+  }
+
+  const c = tut.done ? null : tut.callout();
+  if (c) {
+    calloutEl.appendChild(h(`<div class="co-box">
+      <div class="co-step">TUTORIAL ${escapeHtml(c.step)}</div>
+      <div class="co-title">${escapeHtml(c.title)}</div>
+      <div class="co-text">${escapeHtml(c.text)}</div>
+      <div class="co-do">Do it: the highlighted option below.</div>
+    </div>`));
+    return;
+  }
+
+  // free play (guided script finished): hint on demand
+  if (app.game.state.winner) { calloutEl.style.display = 'none'; return; }
+  const box = h(`<div class="co-box co-free">
+    <div class="co-step">PRACTICE</div>
+    <div class="co-text">${app.hintText ? escapeHtml(app.hintText) : 'Your game now. Stuck? Ask for a suggestion.'}</div>
+  </div>`);
+  const btn = h('<button class="btn co-hint">Hint</button>');
+  btn.addEventListener('click', (e) => { e.stopPropagation(); app.showHint(); });
+  box.appendChild(btn);
+  calloutEl.appendChild(box);
+}
+
 // --- prompt ----------------------------------------------------------------------
 function renderPrompt(app, promptEl) {
   const { game, viewer } = app;
@@ -269,9 +312,16 @@ function renderPrompt(app, promptEl) {
     input.focus();
     return;
   }
+  const allowed = app.allowedId();
   d.options.forEach((o, i) => {
     const key = i < 9 ? `<span class="kbd">${i + 1}</span>` : '';
     const b = h(`<button class="btn opt-btn">${key}${escapeHtml(o.label)}</button>`);
+    if (allowed && o.id !== allowed) {
+      b.disabled = true;
+      b.classList.add('opt-locked');
+    } else if (allowed) {
+      b.classList.add('opt-taught');
+    }
     b.addEventListener('click', () => app.answer(o.id));
     promptEl.appendChild(b);
   });
@@ -281,8 +331,13 @@ function renderPrompt(app, promptEl) {
 export function render(app) {
   const { game, viewer, els } = app;
   const g = game.g;
-  app.optionMap = buildOptionMap(
-    game.decision && (viewer === 'all' || game.decision.player === viewer) ? game.decision : null);
+  let mapDecision =
+    game.decision && (viewer === 'all' || game.decision.player === viewer) ? game.decision : null;
+  const allowed = app.allowedId();
+  if (mapDecision && allowed) {
+    mapDecision = { ...mapDecision, options: mapDecision.options.filter(o => o.id === allowed) };
+  }
+  app.optionMap = buildOptionMap(mapDecision);
 
   // corp zone
   els.corpZone.innerHTML = '';
@@ -331,6 +386,7 @@ export function render(app) {
   }
 
   renderLog(g, viewer, els.log);
+  renderCallout(app, els.callout);
   renderPrompt(app, els.prompt);
 }
 

@@ -48,11 +48,27 @@
     tools/ui-smoke.js jsdom full-game click-throughs (runner/corp/watch,
     asserts details panel populates); paced mode separately verified.
   - User decision: remaining bugs found in play are handled in later phases.
-- Next: **Phase 6 — Tutorial mode** (BUILD_PLAN): scripted first game (fixed
-  decks/draws) with overlay callouts driven by the engine's decision protocol,
-  then a practice mode with hints on demand. The tutorial should reuse the
-  UI's prompt/highlight machinery (docs/UI.md) — likely a scripted decision
-  answerer (like an AI seat) + an overlay layer keyed on decision context tags.
+- **Phase 6 (Tutorial): COMPLETE** — 2026-07-11. Architecture: docs/TUTORIAL.md.
+  - tutorial/: steps.js (12-step guided script authored against the REAL
+    seed-11 hb-core-vs-gabe-core replay + one-time EVENT_CALLOUTS),
+    tutorial.js (TutorialController: validates each step vs the live
+    decision, graceful degrade to free play on mismatch), hints.js
+    (hard RunnerAI as advisor -> always-legal suggestions).
+  - Guided lessons: clicks/credits, economy events, icebreaker install + MU,
+    draw, click-for-credit, run on undefended remote, access + trash cost
+    (Adonis), R&D run, bioroid click-break (Viktor 1.0 x2), access, agenda
+    steal (Project Ares, 2 pts). Reactive callouts: corp score, tags, damage,
+    trace, run-ended-by-sub, purge. Then free play with Hint button.
+  - UI: Tutorial button on setup, callout panel (#callout), taught option
+    pulses gold, others disabled; answer()/board/keyboard all gated.
+  - Verification: suite 237 (tests/tutorial.test.js replays the full script —
+    any engine/AI change that shifts the tutorial game fails the build);
+    ui-smoke tutorial mode clicks the bundle through guided + free play.
+- Next: **Phase 7 — Post-game feedback** (BUILD_PLAN): rule-based analysis of
+  the event log (economy efficiency, floated clicks, missed scoring windows,
+  run risk/reward, unspent resources at loss, key turning points) presented
+  as a turn-annotated review screen after each game. The full game.log is
+  already the single source of truth — analysis/ consumes it read-only.
 
 ## GitHub (sync at the end of every step)
 - Repo: `bmiraski/netrunner-game` (main). Access token: `.git-token` file in
@@ -106,13 +122,14 @@ engine/               ← rules engine (rng, events, state, decisions, effects,
                         game, run, db) — see ENGINE.md
 cards/                ← registry.js + pilots.js + waves-a/b/c/d.js (132 cards)
 ai/                   ← view/base/corp/runner/controller/decks — see AI.md
-tests/                ← run-tests.js + 10 *.test.js files (232 tests)
+tests/                ← run-tests.js + 11 *.test.js files (237 tests)
 tools/                ← soak.js (AI-vs-AI matrix), bundle.js (esbuild ->
                         netrunner.html), ui-smoke.js (jsdom bundle playthrough)
 ui/                   ← browser UI (see docs/UI.md): index.html, main.js,
                         render.js, cardtext.js, logtext.js, style.css
+tutorial/             ← guided script + controller + hints — see TUTORIAL.md
 netrunner.html        ← COMMITTED single-file build (double-click to play)
-tutorial/ analysis/ stats/   ← empty, Phases 6+
+analysis/ stats/      ← empty, Phases 7+
 ```
 
 ## Card data facts
@@ -139,21 +156,19 @@ tutorial/ analysis/ stats/   ← empty, Phases 6+
 - Write unit tests in `tests/` as engine features land, runnable via `node` in sandbox
 - Update the Status section of this file at the end of every working session
 
-## Phase 6 pointers (next session)
-- Read docs/UI.md + docs/ENGINE.md first. Tutorial = fixed seed + fixed decks
-  + a script that (a) answers some decisions automatically, (b) blocks until
-  the player makes the TAUGHT choice, (c) shows overlay callouts keyed on
-  decision context tags (actionMenu, runStep, scoreWindow, ...) and log events.
-- The engine is already deterministic: pick a seed where the scripted first
-  game showcases install/run/ice/access/score/steal/tags/damage cleanly
-  (search seeds with a quick node script against gameConfig decks).
-- Keep tutorial code in tutorial/, engine/ai untouched. UI hooks needed: an
-  overlay layer + a way to restrict clickable options (filter decision
-  options or intercept app.answer).
-- Rebuild + verify cycle after ANY ui/ change: `npm run build` then
-  `node tools/ui-smoke.js` (in sandbox: `npm install jsdom --prefix /tmp/jsd`
-  + `JSDOM_DIR=/tmp/jsd`, `npm install esbuild --prefix /tmp/esb` +
-  `ESBUILD=/tmp/esb/node_modules/.bin/esbuild`; npm DOES work in the sandbox).
-- `node tests/run-tests.js` (232 green) + `node tools/soak.js 5` after ANY
-  engine/ai change. New engine event types must be added to `ui/logtext.js`
-  (ui.test.js fails on unknown types — by design).
+## Phase 7 pointers (next session)
+- Post-game analysis is rule-based (locked decision) over game.log. Read
+  docs/ENGINE.md event catalog notes + ui/logtext.js for every event type.
+- Candidate detectors: floated clicks (turn-start credits vs clicks spent on
+  'click' credits), wasted credits at loss, agendas left scorable (corp had
+  window: scorable agenda + credits while runner poor), run EV in hindsight
+  (accesses vs credits spent), damage deaths with cards in grip, turning
+  points (agenda swings, big trashes).
+- Present as a review screen after game-over (analysis/ module + UI panel or
+  overlay); keep detectors unit-tested against scripted logs.
+- Rebuild + verify cycle: `npm run build` then `node tools/ui-smoke.js`
+  (sandbox: npm install jsdom --prefix /tmp/jsd + JSDOM_DIR=/tmp/jsd,
+  npm install esbuild --prefix /tmp/esb + ESBUILD=.../esbuild). Tests:
+  `node tests/run-tests.js` (237 green); tutorial replay test breaks loudly
+  if engine/AI changes shift the seed-11 tutorial game — re-author per
+  docs/TUTORIAL.md.

@@ -16,7 +16,7 @@ const require_ = createRequire(process.env.JSDOM_DIR
 const { JSDOM } = require_('jsdom');
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const html = readFileSync(join(root, 'netrunner.html'), 'utf8');
-const sides = (process.argv[2] ?? 'runner,corp,watch').split(',');
+const sides = (process.argv[2] ?? 'runner,corp,watch,tutorial').split(',');
 const seed = Number(process.argv[3] ?? 21);
 
 // deterministic option picker: mostly first option, sometimes second —
@@ -40,10 +40,15 @@ async function runSide(side) {
   const $$ = sel => [...window.document.querySelectorAll(sel)];
 
   if (!$('#btn-start')) throw new Error(`${side}: setup screen missing`);
-  const radio = $$(`input[name=side]`).find(r => r.value === side);
-  radio.checked = true;
-  $('#inp-seed').value = String(seed);
-  $('#btn-start').click();
+  let tutorialCallouts = 0;
+  if (side === 'tutorial') {
+    $('#btn-tutorial').click();
+  } else {
+    const radio = $$(`input[name=side]`).find(r => r.value === side);
+    radio.checked = true;
+    $('#inp-seed').value = String(seed);
+    $('#btn-start').click();
+  }
 
   if ($('#table').style.display === 'none') throw new Error(`${side}: table not shown`);
   if (!$$('.server').length) throw new Error(`${side}: no servers rendered`);
@@ -58,12 +63,20 @@ async function runSide(side) {
       clicks++;
       continue;
     }
+    if (side === 'tutorial') {
+      if ($('#callout .co-box')) tutorialCallouts++;
+      const okBtn = $('#callout .co-ok');
+      if (okBtn) { okBtn.click(); clicks++; continue; } // dismiss event callout
+    }
     const numOk = $('.num-row button');
     if (numOk) { numOk.click(); clicks++; continue; }
-    const opts = $$('#prompt .opt-btn');
+    const opts = $$('#prompt .opt-btn').filter(b => !b.disabled);
     if (!opts.length) throw new Error(`${side}: no options rendered and game not over (click ${clicks})`);
     opts[Math.min(pick(opts.length), opts.length - 1)].click();
     clicks++;
+  }
+  if (side === 'tutorial' && tutorialCallouts < 10) {
+    throw new Error(`tutorial: only ${tutorialCallouts} callout paints seen`);
   }
   if (errors.length) throw new Error(`${side}: ${errors.length} page errors, first: ${errors[0]?.stack ?? errors[0]}`);
   if (!$$('.log-over').length) throw new Error(`${side}: game did not finish in ${CAP} interactions`);

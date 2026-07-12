@@ -231,6 +231,29 @@ button, select, input { font: inherit; }
 .log-over { color: var(--gold); font-weight: bold; letter-spacing: .1em; }
 .log-unknown { color: #555; }
 
+/* ---------- tutorial callout ---------- */
+.setup-actions { display: flex; gap: 12px; align-items: center; }
+.btn-tutorial { border-color: var(--gold); color: var(--gold); letter-spacing: .08em; }
+.btn-tutorial:hover { box-shadow: 0 0 12px rgba(255,210,63,.3) inset; }
+.callout { border-bottom: 1px solid var(--edge); }
+.co-box { padding: 10px 12px; border-left: 3px solid var(--gold); background: rgba(255,210,63,.05); }
+.co-event { border-left-color: var(--accent2); background: rgba(255,77,157,.06); }
+.co-free { border-left-color: var(--accent); background: rgba(53,224,200,.04); }
+.co-step { font-size: 10px; letter-spacing: .25em; color: var(--gold); margin-bottom: 4px; }
+.co-free .co-step { color: var(--accent); }
+.co-title { font-weight: bold; color: var(--text); margin-bottom: 4px; }
+.co-text { font-size: 12px; color: var(--text); }
+.co-do { font-size: 11px; color: var(--gold); margin-top: 6px; letter-spacing: .05em; }
+.co-ok, .co-hint { margin-top: 8px; }
+.co-hint { border-color: var(--accent); color: var(--accent); }
+.opt-locked { opacity: .35; cursor: not-allowed; }
+.opt-taught {
+  border-color: var(--gold); color: var(--gold);
+  box-shadow: 0 0 10px rgba(255,210,63,.25);
+  animation: taught-pulse 1.6s ease-in-out infinite;
+}
+@keyframes taught-pulse { 50% { box-shadow: 0 0 2px rgba(255,210,63,.1); } }
+
 /* ---------- popover ---------- */
 .popover {
   position: fixed; z-index: 50; background: var(--panel);

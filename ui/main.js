@@ -8,6 +8,8 @@ import { CorpAI } from '../ai/corp.js';
 import { RunnerAI } from '../ai/runner.js';
 import { AIController } from '../ai/controller.js';
 import { DECKS, gameConfig } from '../ai/decks.js';
+import { TutorialController } from '../tutorial/tutorial.js';
+import { hintFor } from '../tutorial/hints.js';
 import { render } from './render.js';
 import { cardPanelHtml, escapeHtml } from './cardtext.js';
 
@@ -40,10 +42,26 @@ const app = {
   viewer: 'runner',          // 'corp' | 'runner' | 'all' (watch)
   els: {}, optionMap: { byInst: new Map(), byServer: new Map() },
   lastConfig: null,
+  tutorial: null, eventCallouts: [], hintText: null,
+
+  // tutorial helpers (no-ops outside tutorial mode)
+  allowedId() {
+    return this.tutorial && !this.tutorial.done && this.game.decision?.player === 'runner'
+      ? this.tutorial.allowedOptionId() : null;
+  },
+  drainTutorial() {
+    if (this.tutorial) this.eventCallouts.push(...this.tutorial.drainEventCallouts());
+  },
+  showHint() {
+    const hint = hintFor(this.game);
+    this.hintText = hint ? hint.text : 'No decision pending.';
+    render(this);
+  },
 
   // ---- game flow ----
   start(cfg) {
     this.lastConfig = cfg;
+    this.tutorial = null; this.eventCallouts = []; this.hintText = null;
     const seed = cfg.seed;
     this.game = new Game(this.cardsJson, gameConfig(cfg.corpDeck, cfg.runnerDeck, seed));
     const ais = {};
@@ -62,15 +80,39 @@ const app = {
     this.autoInspect();
     if (cfg.side !== 'watch') this.pump();
   },
+  startTutorial() {
+    this.lastConfig = { tutorial: true };
+    this.tutorial = new TutorialController(this.cardsJson);
+    this.eventCallouts = []; this.hintText = null;
+    this.game = this.tutorial.game;
+    this.ctl = this.tutorial.ctl;
+    this.viewer = 'runner';
+    this._seen = 0;
+    this._shownCard = null;
+    $('#setup').style.display = 'none';
+    $('#table').style.display = '';
+    $('#watch-controls').style.display = 'none';
+    this.els.inspector.innerHTML =
+      '<div class="inspector-head">CARD DETAILS</div><div class="inspector-empty">Hover or click any card — details appear here.</div>';
+    this.drainTutorial();
+    render(this);
+    this.autoInspect();
+    this.pump();
+  },
   answer(id) {
     if (this._pacing) return;                   // AI still animating
+    const allowed = this.allowedId();
+    if (allowed && id !== allowed) return;      // tutorial: only the taught move
+    const wasRunner = this.game.decision?.player === 'runner';
     try {
       this.game.choose(id);
     } catch (e) {
       console.error(e);
       return;
     }
+    if (this.tutorial && wasRunner) { this.tutorial.onAnswered(); this.hintText = null; }
     this.closePopover();
+    this.drainTutorial();
     render(this);
     this.autoInspect();
     if (this.viewer !== 'all') this.pump();
@@ -82,6 +124,7 @@ const app = {
     const pace = window.__PACE__ ?? 110;
     if (pace <= 0) {
       this.ctl.run();
+      this.drainTutorial();
       render(this);
       this.autoInspect();
       return;
@@ -90,6 +133,7 @@ const app = {
     this._pacing = true;
     const tick = () => {
       const progressed = !this.game.state.winner && this.ctl.step();
+      this.drainTutorial();
       render(this);
       this.autoInspect();
       const d = this.game.decision;
@@ -227,8 +271,9 @@ async function init() {
   registerAll(createDb(app.cardsJson));
   app.els = {
     corpZone: $('#corp-zone'), midZone: $('#mid-zone'), runnerZone: $('#runner-zone'),
-    log: $('#log'), prompt: $('#prompt'), inspector: $('#inspector'),
+    log: $('#log'), prompt: $('#prompt'), inspector: $('#inspector'), callout: $('#callout'),
   };
+  $('#btn-tutorial').addEventListener('click', () => app.startTutorial());
   document.body.addEventListener('click', () => app.closePopover());
   $('#btn-step1').addEventListener('click', () => app.step(1));
   $('#btn-step25').addEventListener('click', () => app.step(25));

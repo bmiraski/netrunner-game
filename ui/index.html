@@ -41,7 +41,10 @@
     </fieldset>
   </div>
   <div id="deck-desc" class="deck-desc"></div>
-  <button id="btn-start" class="btn btn-primary btn-big">Jack in</button>
+  <div class="setup-actions">
+    <button id="btn-start" class="btn btn-primary btn-big">Jack in</button>
+    <button id="btn-tutorial" class="btn btn-big btn-tutorial">Tutorial — learn to play</button>
+  </div>
 </div>
 
 <div id="table" style="display:none">
@@ -57,6 +60,7 @@
         <button id="btn-step25" class="btn">Step 25</button>
         <button id="btn-stepturn" class="btn">Next turn</button>
       </div>
+      <div id="callout" class="callout" style="display:none"></div>
       <div id="prompt" class="prompt"></div>
       <div id="inspector" class="inspector"></div>
       <div id="log" class="log"></div>

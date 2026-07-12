@@ -238,6 +238,29 @@ button, select, input { font: inherit; }
 .log-over { color: var(--gold); font-weight: bold; letter-spacing: .1em; }
 .log-unknown { color: #555; }
 
+/* ---------- tutorial callout ---------- */
+.setup-actions { display: flex; gap: 12px; align-items: center; }
+.btn-tutorial { border-color: var(--gold); color: var(--gold); letter-spacing: .08em; }
+.btn-tutorial:hover { box-shadow: 0 0 12px rgba(255,210,63,.3) inset; }
+.callout { border-bottom: 1px solid var(--edge); }
+.co-box { padding: 10px 12px; border-left: 3px solid var(--gold); background: rgba(255,210,63,.05); }
+.co-event { border-left-color: var(--accent2); background: rgba(255,77,157,.06); }
+.co-free { border-left-color: var(--accent); background: rgba(53,224,200,.04); }
+.co-step { font-size: 10px; letter-spacing: .25em; color: var(--gold); margin-bottom: 4px; }
+.co-free .co-step { color: var(--accent); }
+.co-title { font-weight: bold; color: var(--text); margin-bottom: 4px; }
+.co-text { font-size: 12px; color: var(--text); }
+.co-do { font-size: 11px; color: var(--gold); margin-top: 6px; letter-spacing: .05em; }
+.co-ok, .co-hint { margin-top: 8px; }
+.co-hint { border-color: var(--accent); color: var(--accent); }
+.opt-locked { opacity: .35; cursor: not-allowed; }
+.opt-taught {
+  border-color: var(--gold); color: var(--gold);
+  box-shadow: 0 0 10px rgba(255,210,63,.25);
+  animation: taught-pulse 1.6s ease-in-out infinite;
+}
+@keyframes taught-pulse { 50% { box-shadow: 0 0 2px rgba(255,210,63,.1); } }
+
 /* ---------- popover ---------- */
 .popover {
   position: fixed; z-index: 50; background: var(--panel);
@@ -293,7 +316,10 @@ button, select, input { font: inherit; }
     </fieldset>
   </div>
   <div id="deck-desc" class="deck-desc"></div>
-  <button id="btn-start" class="btn btn-primary btn-big">Jack in</button>
+  <div class="setup-actions">
+    <button id="btn-start" class="btn btn-primary btn-big">Jack in</button>
+    <button id="btn-tutorial" class="btn btn-big btn-tutorial">Tutorial — learn to play</button>
+  </div>
 </div>
 
 <div id="table" style="display:none">
@@ -309,6 +335,7 @@ button, select, input { font: inherit; }
         <button id="btn-step25" class="btn">Step 25</button>
         <button id="btn-stepturn" class="btn">Next turn</button>
       </div>
+      <div id="callout" class="callout" style="display:none"></div>
       <div id="prompt" class="prompt"></div>
       <div id="inspector" class="inspector"></div>
       <div id="log" class="log"></div>
@@ -7690,6 +7717,172 @@ button, select, input { font: inherit; }
     }
   };
 
+  // tutorial/steps.js
+  var TUTORIAL_CORP_DECK = "hb-core", TUTORIAL_RUNNER_DECK = "gabe-core", GUIDED_STEPS = [
+    {
+      match: { ctx: "setup" },
+      allow: { id: "keep" },
+      title: "Welcome to Netrunner",
+      text: "You are the RUNNER (bottom), hacking the CORP (top). First to 7 agenda points wins \u2014 you steal agendas from corp servers, the corp scores them. This starting hand is strong: economy plus icebreakers. Keep it."
+    },
+    {
+      match: { ctx: "actionMenu" },
+      allow: { labelIncludes: "Sure Gamble" },
+      title: "Clicks & credits",
+      text: "Each turn you get 4 clicks (the gold \u25F4 pips) to spend on actions. Credits pay for everything. Start with economy: Sure Gamble costs 5 credits and pays back 9 \u2014 a 4-credit profit for one click. Play it."
+    },
+    {
+      match: { ctx: "actionMenu" },
+      allow: { labelIncludes: "Peacock" },
+      title: "Install an icebreaker",
+      text: "The corp defends servers with ICE. Icebreakers are programs that get you through. Peacock breaks CODE GATES. Programs cost memory (\u03BC) \u2014 you have 4 MU. Install Peacock (3 credits)."
+    },
+    {
+      match: { ctx: "actionMenu" },
+      allow: { id: "draw" },
+      title: "Draw cards",
+      text: "A click can draw a card from your stack. Card advantage keeps your options open \u2014 and cards in hand also absorb damage. Draw one now."
+    },
+    {
+      match: { ctx: "actionMenu" },
+      allow: { id: "credit" },
+      title: "Click for a credit",
+      text: "The most basic action: one click for one credit. Fine when you have nothing better. Take the credit \u2014 that is your last click, so your turn will end (you discard down to 5 cards at end of turn if over)."
+    },
+    {
+      match: { ctx: "actionMenu" },
+      allow: { id: "run:remote1" },
+      title: "Your first run",
+      text: "The corp built REMOTE 1 and rezzed Adonis Campaign there \u2014 it pays them 3 credits every turn. The server has NO ice protecting it. Running an undefended server is free money: click Run on remote1."
+    },
+    {
+      match: { ctx: "runStep", promptIncludes: "Adonis" },
+      allow: { id: "trash" },
+      title: "Access & trash",
+      text: "A successful run lets you ACCESS the cards there. Many corp cards show a trash cost \u2014 pay it to bin them. Trash Adonis for 3 credits, or it pays the corp 9 more over the next turns."
+    },
+    {
+      match: { ctx: "actionMenu" },
+      allow: { id: "run:rd" },
+      title: "Run on R&D",
+      text: "Central servers: HQ (their hand), R&D (their deck), Archives (their discard). Running R&D lets you see \u2014 and steal \u2014 the top of their deck. There is one unrezzed ice there; the corp may pay to rez it as you approach. Run R&D."
+    },
+    {
+      match: { ctx: "runStep", promptIncludes: "Viktor" },
+      allow: { id: "clickbreak" },
+      title: "Ice: break or suffer",
+      text: 'The corp rezzed Viktor 1.0 \u2014 subroutines shown in the run panel fire unless broken. Peacock is too weak here without boosting (+3 strength for 2 credits), and you are low on credits. But Viktor is a BIOROID: you may spend a click to break a subroutine. Click through "Do 1 core damage".'
+    },
+    {
+      match: { ctx: "runStep", promptIncludes: "Viktor" },
+      allow: { id: "clickbreak" },
+      title: "Break the other one",
+      text: '"End the run" would stop you cold. Spend your last click to break it too. (You could also jack out on a later approach \u2014 retreating is often right when the math is bad.)'
+    },
+    {
+      match: { ctx: "runStep", promptIncludes: "Viktor" },
+      allow: { id: "continue" },
+      title: "All subroutines broken",
+      text: "Every subroutine is green in the run panel \u2014 the ice cannot hurt you now. Continue into the server and access the top card of R&D."
+    },
+    {
+      match: { ctx: "actionMenu" },
+      allow: null,
+      // free play begins
+      title: "You stole an agenda!",
+      text: "Project Ares was on top of R&D \u2014 accessed agendas are stolen automatically. That is how you win. From here the game is yours: watch corp credits, trash their economy, and run where they are weakest. Use the HINT button any time for a suggestion."
+    }
+  ], EVENT_CALLOUTS = {
+    "agenda-scored": {
+      title: "The corp scored an agenda",
+      text: "The corp advanced an agenda in a remote server and scored it. Watch for cards they install AND advance behind ice \u2014 steal them before they finish, or make the server too expensive to defend."
+    },
+    "tags-added": {
+      title: "You are TAGGED",
+      text: "While tagged, the corp can trash your resources and play brutal tagged-only cards. Clearing a tag costs 1 click + 2 credits \u2014 usually do it immediately."
+    },
+    damage: {
+      title: "Damage!",
+      text: "Damage makes you discard random cards from your grip. If you cannot discard enough, you are FLATLINED and lose. Keep cards in hand against damage-heavy corps."
+    },
+    "trace-start": {
+      title: "Trace initiated",
+      text: "A trace pits the corp\u2019s trace strength (they can boost with credits) against your LINK plus credits you spend. Beating it exactly is often cheap \u2014 or let it land if the consequence is mild."
+    },
+    "run-ends-sub": {
+      title: "The run was stopped",
+      text: 'An unbroken "End the run" subroutine ended your run. No access this time \u2014 build up credits or the right breaker and try again.'
+    },
+    "virus-purged": {
+      title: "Virus purge",
+      text: "The corp spent a full turn removing all virus counters. Purging costs them tempo \u2014 your virus programs forced it."
+    }
+  };
+
+  // tutorial/tutorial.js
+  var TutorialController = class {
+    constructor(cardsJson) {
+      this.game = new Game(
+        cardsJson,
+        gameConfig(TUTORIAL_CORP_DECK, TUTORIAL_RUNNER_DECK, 11)
+      ), this.ctl = new AIController(this.game, {
+        corp: new CorpAI({ level: "standard", seed: 11 * 7 + 1 })
+      }), this.stepIndex = 0, this.mismatch = null, this.shownEvents = /* @__PURE__ */ new Set(), this.logMark = 0;
+    }
+    get guided() {
+      return !this.mismatch && this.stepIndex < GUIDED_STEPS.length;
+    }
+    get done() {
+      return !this.guided;
+    }
+    // current guided step, validated against the live decision. On mismatch the
+    // tutorial degrades gracefully to free play (and records why, for tests).
+    currentStep() {
+      if (!this.guided) return null;
+      let d = this.game.decision;
+      if (!d || d.player !== "runner") return null;
+      let step = GUIDED_STEPS[this.stepIndex], m = step.match ?? {};
+      return m.ctx && !(m.ctx in d) || m.promptIncludes && !d.prompt.includes(m.promptIncludes) ? (this.mismatch = `step ${this.stepIndex}: decision "${d.prompt}" does not match ${JSON.stringify(m)}`, null) : step;
+    }
+    // the single permitted option id for the current guided step (null = all)
+    allowedOptionId() {
+      let step = this.currentStep();
+      if (!step || !step.allow) return null;
+      let d = this.game.decision, opt2 = null;
+      return step.allow.id ? opt2 = d.options.find((o) => o.id === step.allow.id) : step.allow.labelIncludes && (opt2 = d.options.find((o) => o.label.includes(step.allow.labelIncludes))), opt2 ? opt2.id : (this.mismatch = `step ${this.stepIndex}: no option ${JSON.stringify(step.allow)} in "${d.prompt}"`, null);
+    }
+    // callout for the pending decision: {title, text, step:'3/12'} or null
+    callout() {
+      let step = this.currentStep();
+      return step ? { title: step.title, text: step.text, step: `${this.stepIndex + 1}/${GUIDED_STEPS.length}` } : null;
+    }
+    // call after every game.choose() answered by the runner seat
+    onAnswered() {
+      this.guided && this.stepIndex++;
+    }
+    // one-time event callouts from new log entries -> [{title, text}]
+    drainEventCallouts() {
+      let out = [], evs = this.game.log;
+      for (; this.logMark < evs.length; this.logMark++) {
+        let type = evs[this.logMark].type, c = EVENT_CALLOUTS[type];
+        c && !this.shownEvents.has(type) && (this.shownEvents.add(type), out.push(c));
+      }
+      return out;
+    }
+  };
+
+  // tutorial/hints.js
+  var advisor = new RunnerAI({ level: "hard", seed: 99 });
+  function hintFor(game) {
+    let d = game.decision;
+    if (!d || d.player !== "runner") return null;
+    let answer = advisor.decide(game, d);
+    if (d.kind === "number")
+      return { answer, text: `Suggestion: choose ${answer}.` };
+    let opt2 = d.options.find((o) => o.id === answer);
+    return { answer, text: `Suggestion: ${opt2 ? opt2.label : answer}.` };
+  }
+
   // ui/cardtext.js
   var FACTION = {
     anarch: { name: "Anarch", color: "#ff5c35" },
@@ -7998,6 +8191,47 @@ button, select, input { font: inherit; }
     }
     logEl.scrollTop = logEl.scrollHeight;
   }
+  function renderCallout(app2, calloutEl) {
+    let tut = app2.tutorial;
+    if (!tut) {
+      calloutEl.style.display = "none";
+      return;
+    }
+    calloutEl.style.display = "", calloutEl.innerHTML = "";
+    let ev = app2.eventCallouts[0];
+    if (ev) {
+      calloutEl.appendChild(h(`<div class="co-box co-event">
+      <div class="co-title">${escapeHtml(ev.title)}</div>
+      <div class="co-text">${escapeHtml(ev.text)}</div>
+    </div>`));
+      let ok = h('<button class="btn btn-primary co-ok">Got it</button>');
+      ok.addEventListener("click", () => {
+        app2.eventCallouts.shift(), renderCallout(app2, calloutEl);
+      }), calloutEl.querySelector(".co-box").appendChild(ok);
+      return;
+    }
+    let c = tut.done ? null : tut.callout();
+    if (c) {
+      calloutEl.appendChild(h(`<div class="co-box">
+      <div class="co-step">TUTORIAL ${escapeHtml(c.step)}</div>
+      <div class="co-title">${escapeHtml(c.title)}</div>
+      <div class="co-text">${escapeHtml(c.text)}</div>
+      <div class="co-do">Do it: the highlighted option below.</div>
+    </div>`));
+      return;
+    }
+    if (app2.game.state.winner) {
+      calloutEl.style.display = "none";
+      return;
+    }
+    let box = h(`<div class="co-box co-free">
+    <div class="co-step">PRACTICE</div>
+    <div class="co-text">${app2.hintText ? escapeHtml(app2.hintText) : "Your game now. Stuck? Ask for a suggestion."}</div>
+  </div>`), btn = h('<button class="btn co-hint">Hint</button>');
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation(), app2.showHint();
+    }), box.appendChild(btn), calloutEl.appendChild(box);
+  }
   function renderPrompt(app2, promptEl) {
     let { game, viewer } = app2, d = game.decision;
     if (promptEl.innerHTML = "", game.state.winner) {
@@ -8016,16 +8250,15 @@ button, select, input { font: inherit; }
       row.querySelector("button").addEventListener("click", () => app2.answer(Number(input.value))), promptEl.appendChild(row), input.focus();
       return;
     }
+    let allowed = app2.allowedId();
     d.options.forEach((o, i) => {
       let key = i < 9 ? `<span class="kbd">${i + 1}</span>` : "", b = h(`<button class="btn opt-btn">${key}${escapeHtml(o.label)}</button>`);
-      b.addEventListener("click", () => app2.answer(o.id)), promptEl.appendChild(b);
+      allowed && o.id !== allowed ? (b.disabled = !0, b.classList.add("opt-locked")) : allowed && b.classList.add("opt-taught"), b.addEventListener("click", () => app2.answer(o.id)), promptEl.appendChild(b);
     });
   }
   function render(app2) {
-    let { game, viewer, els } = app2, g = game.g;
-    app2.optionMap = buildOptionMap(
-      game.decision && (viewer === "all" || game.decision.player === viewer) ? game.decision : null
-    ), els.corpZone.innerHTML = "", els.corpZone.appendChild(corpBar(app2, g));
+    let { game, viewer, els } = app2, g = game.g, mapDecision = game.decision && (viewer === "all" || game.decision.player === viewer) ? game.decision : null, allowed = app2.allowedId();
+    mapDecision && allowed && (mapDecision = { ...mapDecision, options: mapDecision.options.filter((o) => o.id === allowed) }), app2.optionMap = buildOptionMap(mapDecision), els.corpZone.innerHTML = "", els.corpZone.appendChild(corpBar(app2, g));
     let serversRow = h('<div class="servers-row"></div>'), remotes = Object.keys(g.state.corp.servers).filter((s) => s.startsWith("remote"));
     for (let sid of [...remotes, "archives", "rd", "hq"])
       serversRow.appendChild(serverBox(app2, g, sid, viewer));
@@ -8048,7 +8281,7 @@ button, select, input { font: inherit; }
       let el = document.querySelector(`[data-server="${sid}"]`);
       el && el.classList.add("actionable");
     }
-    renderLog(g, viewer, els.log), renderPrompt(app2, els.prompt);
+    renderLog(g, viewer, els.log), renderCallout(app2, els.callout), renderPrompt(app2, els.prompt);
   }
 
   // ui/main.js
@@ -8075,24 +8308,43 @@ button, select, input { font: inherit; }
     els: {},
     optionMap: { byInst: /* @__PURE__ */ new Map(), byServer: /* @__PURE__ */ new Map() },
     lastConfig: null,
+    tutorial: null,
+    eventCallouts: [],
+    hintText: null,
+    // tutorial helpers (no-ops outside tutorial mode)
+    allowedId() {
+      return this.tutorial && !this.tutorial.done && this.game.decision?.player === "runner" ? this.tutorial.allowedOptionId() : null;
+    },
+    drainTutorial() {
+      this.tutorial && this.eventCallouts.push(...this.tutorial.drainEventCallouts());
+    },
+    showHint() {
+      let hint = hintFor(this.game);
+      this.hintText = hint ? hint.text : "No decision pending.", render(this);
+    },
     // ---- game flow ----
     start(cfg) {
-      this.lastConfig = cfg;
+      this.lastConfig = cfg, this.tutorial = null, this.eventCallouts = [], this.hintText = null;
       let seed = cfg.seed;
       this.game = new Game(this.cardsJson, gameConfig(cfg.corpDeck, cfg.runnerDeck, seed));
       let ais = {};
       cfg.side !== "corp" && (ais.corp = new CorpAI({ level: cfg.level, seed: seed * 7 + 1 })), cfg.side !== "runner" && (ais.runner = new RunnerAI({ level: cfg.level, seed: seed * 13 + 2 })), this.ctl = new AIController(this.game, ais), this.viewer = cfg.side === "watch" ? "all" : cfg.side, this._seen = 0, $("#setup").style.display = "none", $("#table").style.display = "", $("#watch-controls").style.display = cfg.side === "watch" ? "" : "none", this.els.inspector.innerHTML = '<div class="inspector-head">CARD DETAILS</div><div class="inspector-empty">Hover or click any card \u2014 details appear here.</div>', this._shownCard = null, render(this), this.autoInspect(), cfg.side !== "watch" && this.pump();
     },
+    startTutorial() {
+      this.lastConfig = { tutorial: !0 }, this.tutorial = new TutorialController(this.cardsJson), this.eventCallouts = [], this.hintText = null, this.game = this.tutorial.game, this.ctl = this.tutorial.ctl, this.viewer = "runner", this._seen = 0, this._shownCard = null, $("#setup").style.display = "none", $("#table").style.display = "", $("#watch-controls").style.display = "none", this.els.inspector.innerHTML = '<div class="inspector-head">CARD DETAILS</div><div class="inspector-empty">Hover or click any card \u2014 details appear here.</div>', this.drainTutorial(), render(this), this.autoInspect(), this.pump();
+    },
     answer(id) {
-      if (!this._pacing) {
-        try {
-          this.game.choose(id);
-        } catch (e) {
-          console.error(e);
-          return;
-        }
-        this.closePopover(), render(this), this.autoInspect(), this.viewer !== "all" && this.pump();
+      if (this._pacing) return;
+      let allowed = this.allowedId();
+      if (allowed && id !== allowed) return;
+      let wasRunner = this.game.decision?.player === "runner";
+      try {
+        this.game.choose(id);
+      } catch (e) {
+        console.error(e);
+        return;
       }
+      this.tutorial && wasRunner && (this.tutorial.onAnswered(), this.hintText = null), this.closePopover(), this.drainTutorial(), render(this), this.autoInspect(), this.viewer !== "all" && this.pump();
     },
     // paced AI advance: one AI decision per tick so the log/board animate
     // instead of jumping a whole turn. window.__PACE__ = 0 -> synchronous
@@ -8100,14 +8352,14 @@ button, select, input { font: inherit; }
     pump() {
       let pace = window.__PACE__ ?? 110;
       if (pace <= 0) {
-        this.ctl.run(), render(this), this.autoInspect();
+        this.ctl.run(), this.drainTutorial(), render(this), this.autoInspect();
         return;
       }
       if (this._pacing) return;
       this._pacing = !0;
       let tick = () => {
         let progressed = !this.game.state.winner && this.ctl.step();
-        render(this), this.autoInspect();
+        this.drainTutorial(), render(this), this.autoInspect();
         let d = this.game.decision;
         if (progressed && !this.game.state.winner && d && this.ctl.ais[d.player]) {
           this._paceTimer = setTimeout(tick, pace);
@@ -8217,8 +8469,9 @@ button, select, input { font: inherit; }
       runnerZone: $("#runner-zone"),
       log: $("#log"),
       prompt: $("#prompt"),
-      inspector: $("#inspector")
-    }, document.body.addEventListener("click", () => app.closePopover()), $("#btn-step1").addEventListener("click", () => app.step(1)), $("#btn-step25").addEventListener("click", () => app.step(25)), $("#btn-stepturn").addEventListener("click", () => app.stepTurn()), document.addEventListener("keydown", (e) => {
+      inspector: $("#inspector"),
+      callout: $("#callout")
+    }, $("#btn-tutorial").addEventListener("click", () => app.startTutorial()), document.body.addEventListener("click", () => app.closePopover()), $("#btn-step1").addEventListener("click", () => app.step(1)), $("#btn-step25").addEventListener("click", () => app.step(25)), $("#btn-stepturn").addEventListener("click", () => app.stepTurn()), document.addEventListener("keydown", (e) => {
       if ($("#table").style.display === "none") return;
       if (e.key === "Escape") {
         app.closePopover();
