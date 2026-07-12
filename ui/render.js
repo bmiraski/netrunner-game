@@ -2,6 +2,8 @@
 // The UI is a decision renderer (ENGINE.md): everything here is read-only;
 // clicks dispatch decision option ids back through app.answer(id).
 import { memoryUsed, memoryLimit, handSize } from '../engine/state.js';
+import { activeSubs, iceStrength } from '../engine/run.js';
+import { linkBonus } from '../engine/effects.js';
 import { escapeHtml, factionColor, statLine, cardPanelHtml } from './cardtext.js';
 import { eventText, serverName } from './logtext.js';
 
@@ -43,14 +45,18 @@ function tile(app, it, { facedown = false, ice = false } = {}) {
   const card = it.card;
   const shown = !facedown;
   const color = shown ? factionColor(card.faction) : '#39404d';
+  const subline = shown && card.subtypes?.length
+    ? `<div class="tile-sub">${escapeHtml(card.subtypes.slice(0, 3).join(' · '))}</div>` : '';
   const el = h(`<div class="tile ${ice ? 'tile-ice' : ''} ${facedown ? 'tile-facedown' : ''}"
        data-inst="${it.id}" style="--fc:${color}">
     <div class="tile-title">${shown ? escapeHtml(card.title) : (ice ? 'ICE' : 'CARD')}</div>
+    ${subline}
     ${shown ? `<div class="tile-stats">${escapeHtml(statLine(card))}</div>` : ''}
     ${badges(it, shown)}
   </div>`);
   if (ice && !it.rezzed) el.classList.add('tile-unrezzed');
   el.addEventListener('click', (e) => { e.stopPropagation(); app.onCardClick(it.id, el, shown ? card : null); });
+  if (shown) el.addEventListener('mouseenter', () => app.preview(card));
   return el;
 }
 
@@ -104,32 +110,58 @@ function serverBox(app, g, sid, viewer) {
 }
 
 // --- trackers ---------------------------------------------------------------
-function corpBar(g) {
+const pips = n => n > 0
+  ? `<span class="pips">${'<span class="pip">&#x25F4;</span>'.repeat(Math.min(n, 9))}${n > 9 ? `+${n - 9}` : ''}</span>`
+  : '<span class="pips pips-none">no clicks</span>';
+
+function corpBar(app, g) {
   const c = g.state.corp;
   const idCard = g.insts[c.identity].card;
-  return h(`<div class="side-bar corp-bar" style="--fc:${factionColor(idCard.faction)}">
+  const active = g.state.activePlayer === 'corp';
+  const el = h(`<div class="side-bar corp-bar ${active ? 'side-active' : ''}" style="--fc:${factionColor(idCard.faction)}">
     <span class="id-name" data-inst="${c.identity}">${escapeHtml(idCard.title)}</span>
     <span class="stat">&#x2B21;<i>c</i> ${c.credits}</span>
-    <span class="stat">&#x25F4; ${c.clicks}</span>
-    <span class="stat">Agenda pts: ${c.agendaPoints}</span>
+    <span class="stat">${pips(c.clicks)}</span>
+    <span class="stat">Agenda pts: <b>${c.agendaPoints}</b>/7</span>
     ${c.badPublicity ? `<span class="stat stat-bad">BP ${c.badPublicity}</span>` : ''}
   </div>`);
+  el.querySelector('.id-name').addEventListener('mouseenter', () => app.preview(idCard));
+  return el;
 }
 
-function runnerBar(g) {
+function runnerBar(app, g) {
   const r = g.state.runner;
   const idCard = g.insts[r.identity].card;
   const mu = `${memoryUsed(g)}/${memoryLimit(g)}`;
-  return h(`<div class="side-bar runner-bar" style="--fc:${factionColor(idCard.faction)}">
+  const link = r.baseLink + linkBonus(g);
+  const active = g.state.activePlayer === 'runner';
+  const el = h(`<div class="side-bar runner-bar ${active ? 'side-active' : ''}" style="--fc:${factionColor(idCard.faction)}">
     <span class="id-name" data-inst="${r.identity}">${escapeHtml(idCard.title)}</span>
     <span class="stat">&#x2B21;<i>c</i> ${r.credits}</span>
-    <span class="stat">&#x25F4; ${r.clicks}</span>
+    <span class="stat">${pips(r.clicks)}</span>
     <span class="stat">&mu; ${mu}</span>
-    <span class="stat">Link ${r.baseLink}</span>
-    <span class="stat">Agenda pts: ${r.agendaPoints}</span>
+    <span class="stat">Link ${link}</span>
+    <span class="stat">Agenda pts: <b>${r.agendaPoints}</b>/7</span>
     ${r.tags ? `<span class="stat stat-bad">Tags ${r.tags}</span>` : ''}
     ${r.brainDamage ? `<span class="stat stat-bad">Brain ${r.brainDamage}</span>` : ''}
     <span class="stat">Stack ${r.deck.length} · Heap ${r.discard.length}</span>
+  </div>`);
+  el.querySelector('.id-name').addEventListener('mouseenter', () => app.preview(idCard));
+  return el;
+}
+
+// --- turn banner --------------------------------------------------------------
+function turnBanner(app) {
+  const s = app.game.state;
+  if (s.winner) {
+    return h(`<div class="turn-banner turn-over">GAME OVER — ${s.winner.toUpperCase()} WINS (${escapeHtml(s.winReason ?? '')})</div>`);
+  }
+  const who = s.activePlayer ? `${s.activePlayer === 'corp' ? 'CORP' : 'RUNNER'} TURN` : 'SETUP';
+  const d = app.game.decision;
+  const thinking = d && app.viewer !== 'all' && d.player !== app.viewer;
+  return h(`<div class="turn-banner ${s.activePlayer ?? ''}">
+    <span>TURN ${s.turn}</span><span class="tb-sep">//</span><span>${who}</span>
+    ${thinking ? `<span class="tb-sep">//</span><span class="tb-thinking">${d.player} is thinking&hellip;</span>` : ''}
   </div>`);
 }
 
@@ -147,20 +179,54 @@ function handRow(app, g, player, viewer, label) {
   return row;
 }
 
-// --- run banner ---------------------------------------------------------------
-function runBanner(g) {
+// --- run panel ------------------------------------------------------------
+// Step-by-step run visualization: current phase, and during an encounter the
+// full subroutine list with per-sub broken/unbroken state.
+// Returns {el, focusIceId} — focusIceId gets the board marker.
+function runPanel(g) {
   const run = g.state.run;
-  if (!run || run.ended) return null;
-  let phase = '';
+  if (!run || run.ended) return { el: null, focusIceId: null };
+
+  let phase = '', focusIceId = null;
   const events = g.log.events;
   for (let i = events.length - 1; i >= 0; i--) {
     const ev = events[i];
     if (ev.type === 'run-start' || ev.type === 'run-end') break;
-    if (ev.type === 'encounter-ice') { phase = `encountering ${ev.data.title}`; break; }
-    if (ev.type === 'approach-ice') { phase = `approaching ${ev.data.rezzed ? ev.data.title : 'unrezzed ice'}`; break; }
+    if (ev.type === 'approach-ice') {
+      phase = `approaching ${ev.data.rezzed ? ev.data.title : 'unrezzed ice'} (position ${ev.data.position + 1})`;
+      focusIceId = ev.data.iceId;
+      break;
+    }
     if (ev.type === 'approach-server') { phase = 'approaching the server'; break; }
+    if (ev.type === 'access-count' || ev.type === 'card-accessed') { phase = 'accessing cards'; break; }
   }
-  return h(`<div class="run-banner">RUN on ${escapeHtml(serverName(run.server))}${phase ? ' — ' + escapeHtml(phase) : ''}${run.successful ? ' — SUCCESSFUL' : ''}</div>`);
+
+  const el = h(`<div class="run-panel">
+    <div class="run-head">RUN on ${escapeHtml(serverName(run.server))}${run.successful ? ' — <b>SUCCESSFUL</b>' : ''}</div>
+  </div>`);
+
+  const encId = run.encounterIce;
+  if (encId) {
+    focusIceId = encId;
+    const ice = g.insts[encId];
+    const subs = activeSubs(g, ice);
+    const rows = subs.map(x => {
+      const broken = ice.brokenSubs.includes(x.index);
+      return `<div class="run-sub ${broken ? 'sub-broken' : 'sub-live'}">
+        <span class="sub-mark">${broken ? '&#x2713;' : '&#x21B3;'}</span>
+        <span>${escapeHtml(x.label)}</span>
+        <span class="sub-state">${broken ? 'broken' : 'unbroken'}</span>
+      </div>`;
+    }).join('');
+    el.appendChild(h(`<div class="run-encounter">
+      <div class="run-ice-name">ENCOUNTER: ${escapeHtml(ice.card.title)}
+        <span class="run-ice-str">str ${iceStrength(g, encId)}</span></div>
+      <div class="run-subs">${rows || '<div class="run-sub sub-none">no active subroutines</div>'}</div>
+    </div>`));
+  } else if (phase) {
+    el.appendChild(h(`<div class="run-phase">${escapeHtml(phase)}</div>`));
+  }
+  return { el, focusIceId };
 }
 
 // --- log -----------------------------------------------------------------------
@@ -190,24 +256,25 @@ function renderPrompt(app, promptEl) {
   if (!d) return;
   const mine = viewer === 'all' || d.player === viewer;
   if (!mine) {
-    promptEl.appendChild(h(`<div class="prompt-head">Waiting for ${d.player}…</div>`));
+    promptEl.appendChild(h(`<div class="prompt-head prompt-waiting">${d.player === 'corp' ? 'Corp' : 'Runner'} is thinking&hellip;</div>`));
     return;
   }
   promptEl.appendChild(h(`<div class="prompt-side">${d.player.toUpperCase()} decision</div>`));
   promptEl.appendChild(h(`<div class="prompt-head">${escapeHtml(d.prompt)}</div>`));
   if (d.kind === 'number') {
-    const row = h(`<div class="num-row"><input type="number" min="${d.min}" max="${d.max}" value="${d.min}" class="num-input"><button class="btn btn-primary">OK</button></div>`);
+    const row = h(`<div class="num-row"><input type="number" min="${d.min}" max="${d.max}" value="${d.min}" class="num-input"><button class="btn btn-primary">OK &#x23CE;</button></div>`);
     const input = row.querySelector('input');
     row.querySelector('button').addEventListener('click', () => app.answer(Number(input.value)));
     promptEl.appendChild(row);
     input.focus();
     return;
   }
-  for (const o of d.options) {
-    const b = h(`<button class="btn opt-btn">${escapeHtml(o.label)}</button>`);
+  d.options.forEach((o, i) => {
+    const key = i < 9 ? `<span class="kbd">${i + 1}</span>` : '';
+    const b = h(`<button class="btn opt-btn">${key}${escapeHtml(o.label)}</button>`);
     b.addEventListener('click', () => app.answer(o.id));
     promptEl.appendChild(b);
-  }
+  });
 }
 
 // --- top-level render ---------------------------------------------------------------
@@ -219,7 +286,7 @@ export function render(app) {
 
   // corp zone
   els.corpZone.innerHTML = '';
-  els.corpZone.appendChild(corpBar(g));
+  els.corpZone.appendChild(corpBar(app, g));
   const serversRow = h('<div class="servers-row"></div>');
   const sids = Object.keys(g.state.corp.servers);
   const remotes = sids.filter(s => s.startsWith('remote'));
@@ -229,14 +296,20 @@ export function render(app) {
   els.corpZone.appendChild(serversRow);
   if (viewer === 'corp' || viewer === 'all') els.corpZone.appendChild(handRow(app, g, 'corp', viewer, 'HQ'));
 
-  // middle: run banner
+  // middle: turn banner + run panel
   els.midZone.innerHTML = '';
-  const rb = runBanner(g);
-  if (rb) els.midZone.appendChild(rb);
+  els.midZone.appendChild(turnBanner(app));
+  const { el: runEl, focusIceId } = runPanel(g);
+  if (runEl) els.midZone.appendChild(runEl);
+  if (focusIceId != null) {
+    for (const iceEl of document.querySelectorAll(`[data-inst="${focusIceId}"]`)) {
+      iceEl.classList.add('tile-current-ice');
+    }
+  }
 
   // runner zone
   els.runnerZone.innerHTML = '';
-  els.runnerZone.appendChild(runnerBar(g));
+  els.runnerZone.appendChild(runnerBar(app, g));
   const rig = g.state.runner.rig;
   const rigRow = h('<div class="rig-row"></div>');
   for (const kind of ['program', 'hardware', 'resource']) {

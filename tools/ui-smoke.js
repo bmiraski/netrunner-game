@@ -32,6 +32,7 @@ function makePick(s) {
 async function runSide(side) {
   const dom = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true });
   const { window } = dom;
+  window.__PACE__ = 0;               // synchronous AI advance (no pacing timers)
   const errors = [];
   window.addEventListener('error', e => errors.push(e.error ?? e.message));
   await new Promise(r => setTimeout(r, 50));           // let init() settle

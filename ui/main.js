@@ -56,12 +56,14 @@ const app = {
     $('#table').style.display = '';
     $('#watch-controls').style.display = cfg.side === 'watch' ? '' : 'none';
     this.els.inspector.innerHTML =
-      '<div class="inspector-head">CARD DETAILS</div><div class="inspector-empty">Click any card — details appear here.</div>';
-    if (cfg.side !== 'watch') this.ctl.run();
+      '<div class="inspector-head">CARD DETAILS</div><div class="inspector-empty">Hover or click any card — details appear here.</div>';
+    this._shownCard = null;
     render(this);
     this.autoInspect();
+    if (cfg.side !== 'watch') this.pump();
   },
   answer(id) {
+    if (this._pacing) return;                   // AI still animating
     try {
       this.game.choose(id);
     } catch (e) {
@@ -69,9 +71,36 @@ const app = {
       return;
     }
     this.closePopover();
-    if (this.viewer !== 'all') this.ctl.run();
     render(this);
     this.autoInspect();
+    if (this.viewer !== 'all') this.pump();
+  },
+  // paced AI advance: one AI decision per tick so the log/board animate
+  // instead of jumping a whole turn. window.__PACE__ = 0 -> synchronous
+  // (used by the jsdom smoke test).
+  pump() {
+    const pace = window.__PACE__ ?? 110;
+    if (pace <= 0) {
+      this.ctl.run();
+      render(this);
+      this.autoInspect();
+      return;
+    }
+    if (this._pacing) return;
+    this._pacing = true;
+    const tick = () => {
+      const progressed = !this.game.state.winner && this.ctl.step();
+      render(this);
+      this.autoInspect();
+      const d = this.game.decision;
+      if (progressed && !this.game.state.winner && d && this.ctl.ais[d.player]) {
+        this._paceTimer = setTimeout(tick, pace);
+        return;
+      }
+      this._pacing = false;
+      render(this);                              // repaint with prompt active
+    };
+    tick();
   },
   step(n) {                          // watch mode
     for (let i = 0; i < n; i++) if (this.game.state.winner || !this.ctl.step()) break;
@@ -102,6 +131,8 @@ const app = {
     this._seen = evs.length;
   },
   newGame() {
+    clearTimeout(this._paceTimer);
+    this._pacing = false;
     $('#table').style.display = 'none';
     $('#setup').style.display = '';
   },
@@ -121,10 +152,20 @@ const app = {
   inspect(card) {
     const el = this.els.inspector;
     el.innerHTML = '<div class="inspector-head">CARD DETAILS</div>' + cardPanelHtml(card);
+    this._shownCard = card;
     // restart the attention flash
     el.classList.remove('inspector-flash');
     void el.offsetWidth;
     el.classList.add('inspector-flash');
+    el.scrollTop = 0;
+  },
+  // hover preview: same panel, no flash (don't grab attention on mouse-over)
+  preview(card) {
+    if (card === this._shownCard) return;
+    this._shownCard = card;
+    const el = this.els.inspector;
+    el.classList.remove('inspector-flash');
+    el.innerHTML = '<div class="inspector-head">CARD DETAILS</div>' + cardPanelHtml(card);
     el.scrollTop = 0;
   },
   popover(anchor, opts) {
@@ -192,6 +233,28 @@ async function init() {
   $('#btn-step1').addEventListener('click', () => app.step(1));
   $('#btn-step25').addEventListener('click', () => app.step(25));
   $('#btn-stepturn').addEventListener('click', () => app.stepTurn());
+
+  // keyboard: 1-9 pick a prompt option, Enter = sole option / confirm number,
+  // Escape closes the popover
+  document.addEventListener('keydown', (e) => {
+    if ($('#table').style.display === 'none') return;    // setup screen
+    if (e.key === 'Escape') { app.closePopover(); return; }
+    if (e.target.tagName === 'INPUT') {
+      if (e.key === 'Enter') { $('.num-row button')?.click(); e.preventDefault(); }
+      return;
+    }
+    const pop = document.querySelector('.popover');
+    const scope = pop ?? $('#prompt');
+    const opts = [...scope.querySelectorAll('.opt-btn')];
+    if (!opts.length) return;
+    if (e.key >= '1' && e.key <= '9') {
+      opts[Number(e.key) - 1]?.click();
+      e.preventDefault();
+    } else if (e.key === 'Enter' && opts.length === 1) {
+      opts[0].click();
+      e.preventDefault();
+    }
+  });
   buildSetup();
 }
 

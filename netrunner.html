@@ -106,6 +106,7 @@ button, select, input { font: inherit; }
 }
 .tile:hover { border-color: var(--accent); }
 .tile-title { font-size: 12px; }
+.tile-sub { font-size: 9px; color: var(--fc, var(--dim)); opacity: .85; letter-spacing: .04em; }
 .tile-stats { font-size: 10px; color: var(--dim); }
 .tile-ice { background: #101623; }
 .tile-unrezzed, .tile-facedown { opacity: .8; }
@@ -139,12 +140,52 @@ button, select, input { font: inherit; }
 .hand-label { color: var(--dim); font-size: 11px; letter-spacing: .1em; white-space: nowrap; padding-top: 8px; }
 .hand-cards { display: flex; flex-wrap: wrap; gap: 4px; }
 
-/* ---------- run banner ---------- */
-.run-banner {
-  border: 1px solid var(--accent2); color: var(--accent2);
-  border-radius: 4px; padding: 5px 12px; letter-spacing: .1em;
-  background: rgba(255,77,157,.07); box-shadow: 0 0 14px rgba(255,77,157,.25);
+/* ---------- turn banner ---------- */
+.turn-banner {
+  display: flex; gap: 10px; align-items: baseline;
+  border: 1px solid var(--edge); border-radius: 4px; padding: 4px 12px;
+  color: var(--dim); letter-spacing: .15em; font-size: 12px;
 }
+.turn-banner.corp { border-color: #b57edc55; color: #cbb3e3; }
+.turn-banner.runner { border-color: #35e0c855; color: var(--accent); }
+.turn-over { border-color: var(--gold); color: var(--gold); }
+.tb-sep { color: var(--edge); }
+.tb-thinking { color: var(--dim); animation: think-pulse 1.2s ease-in-out infinite; }
+@keyframes think-pulse { 50% { opacity: .35; } }
+
+/* ---------- click pips ---------- */
+.pips .pip { color: var(--gold); margin-right: 1px; }
+.pips-none { color: var(--dim); font-size: 11px; }
+.side-active { border-color: var(--fc, var(--accent)); box-shadow: 0 0 12px rgba(53,224,200,.12); }
+.side-active .id-name { text-shadow: 0 0 10px var(--fc, var(--accent)); }
+
+/* ---------- run panel ---------- */
+.run-panel {
+  border: 1px solid var(--accent2); border-radius: 4px;
+  background: rgba(255,77,157,.06); box-shadow: 0 0 14px rgba(255,77,157,.22);
+  padding: 6px 12px 8px;
+}
+.run-head { color: var(--accent2); letter-spacing: .12em; }
+.run-phase { color: var(--dim); font-size: 12px; margin-top: 3px; }
+.run-encounter { margin-top: 5px; }
+.run-ice-name { color: var(--text); font-weight: bold; }
+.run-ice-str { color: var(--accent2); font-weight: normal; margin-left: 8px; font-size: 12px; }
+.run-subs { margin-top: 4px; display: flex; flex-direction: column; gap: 2px; }
+.run-sub { display: flex; gap: 8px; align-items: baseline; font-size: 12px; }
+.run-sub .sub-mark { width: 14px; text-align: center; }
+.sub-live { color: var(--danger); }
+.sub-broken { color: var(--good); }
+.sub-broken span:nth-child(2) { text-decoration: line-through; opacity: .75; }
+.sub-state { margin-left: auto; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; opacity: .8; }
+.sub-none { color: var(--dim); }
+
+/* current approach/encounter ice marker */
+.tile-current-ice {
+  outline: 2px solid var(--accent2);
+  box-shadow: 0 0 14px rgba(255,77,157,.5);
+  animation: ice-pulse 1.4s ease-in-out infinite;
+}
+@keyframes ice-pulse { 50% { box-shadow: 0 0 4px rgba(255,77,157,.25); } }
 
 /* ---------- sidebar: prompt / inspector / log ---------- */
 .watch-controls { display: flex; gap: 6px; padding: 8px; border-bottom: 1px solid var(--edge); }
@@ -154,6 +195,13 @@ button, select, input { font: inherit; }
 }
 .prompt-side { color: var(--accent2); font-size: 10px; letter-spacing: .2em; }
 .prompt-head { color: var(--accent); }
+.prompt-waiting { color: var(--dim); animation: think-pulse 1.2s ease-in-out infinite; }
+.kbd {
+  display: inline-block; min-width: 14px; text-align: center;
+  border: 1px solid var(--edge); border-radius: 3px; margin-right: 7px;
+  padding: 0 3px; font-size: 10px; color: var(--dim); background: var(--bg);
+}
+.opt-btn:hover .kbd { border-color: var(--accent); color: var(--accent); }
 .prompt-sub { color: var(--dim); }
 .opt-btn { width: 100%; }
 .num-row { display: flex; gap: 6px; }
@@ -7810,15 +7858,16 @@ button, select, input { font: inherit; }
     (map.get(k) ?? map.set(k, []).get(k)).push(v);
   };
   function tile(app2, it, { facedown = !1, ice = !1 } = {}) {
-    let card = it.card, shown = !facedown, color = shown ? factionColor(card.faction) : "#39404d", el = h(`<div class="tile ${ice ? "tile-ice" : ""} ${facedown ? "tile-facedown" : ""}"
+    let card = it.card, shown = !facedown, color = shown ? factionColor(card.faction) : "#39404d", subline = shown && card.subtypes?.length ? `<div class="tile-sub">${escapeHtml(card.subtypes.slice(0, 3).join(" \xB7 "))}</div>` : "", el = h(`<div class="tile ${ice ? "tile-ice" : ""} ${facedown ? "tile-facedown" : ""}"
        data-inst="${it.id}" style="--fc:${color}">
     <div class="tile-title">${shown ? escapeHtml(card.title) : ice ? "ICE" : "CARD"}</div>
+    ${subline}
     ${shown ? `<div class="tile-stats">${escapeHtml(statLine(card))}</div>` : ""}
     ${badges(it, shown)}
   </div>`);
     return ice && !it.rezzed && el.classList.add("tile-unrezzed"), el.addEventListener("click", (e) => {
       e.stopPropagation(), app2.onCardClick(it.id, el, shown ? card : null);
-    }), el;
+    }), shown && el.addEventListener("mouseenter", () => app2.preview(card)), el;
   }
   function badges(it, shown) {
     let b = [];
@@ -7857,28 +7906,39 @@ button, select, input { font: inherit; }
     }
     return box.addEventListener("click", () => app2.onServerClick(sid, box)), box;
   }
-  function corpBar(g) {
-    let c = g.state.corp, idCard = g.insts[c.identity].card;
-    return h(`<div class="side-bar corp-bar" style="--fc:${factionColor(idCard.faction)}">
+  var pips = (n) => n > 0 ? `<span class="pips">${'<span class="pip">&#x25F4;</span>'.repeat(Math.min(n, 9))}${n > 9 ? `+${n - 9}` : ""}</span>` : '<span class="pips pips-none">no clicks</span>';
+  function corpBar(app2, g) {
+    let c = g.state.corp, idCard = g.insts[c.identity].card, active = g.state.activePlayer === "corp", el = h(`<div class="side-bar corp-bar ${active ? "side-active" : ""}" style="--fc:${factionColor(idCard.faction)}">
     <span class="id-name" data-inst="${c.identity}">${escapeHtml(idCard.title)}</span>
     <span class="stat">&#x2B21;<i>c</i> ${c.credits}</span>
-    <span class="stat">&#x25F4; ${c.clicks}</span>
-    <span class="stat">Agenda pts: ${c.agendaPoints}</span>
+    <span class="stat">${pips(c.clicks)}</span>
+    <span class="stat">Agenda pts: <b>${c.agendaPoints}</b>/7</span>
     ${c.badPublicity ? `<span class="stat stat-bad">BP ${c.badPublicity}</span>` : ""}
   </div>`);
+    return el.querySelector(".id-name").addEventListener("mouseenter", () => app2.preview(idCard)), el;
   }
-  function runnerBar(g) {
-    let r = g.state.runner, idCard = g.insts[r.identity].card, mu = `${memoryUsed(g)}/${memoryLimit(g)}`;
-    return h(`<div class="side-bar runner-bar" style="--fc:${factionColor(idCard.faction)}">
+  function runnerBar(app2, g) {
+    let r = g.state.runner, idCard = g.insts[r.identity].card, mu = `${memoryUsed(g)}/${memoryLimit(g)}`, link = r.baseLink + linkBonus(g), active = g.state.activePlayer === "runner", el = h(`<div class="side-bar runner-bar ${active ? "side-active" : ""}" style="--fc:${factionColor(idCard.faction)}">
     <span class="id-name" data-inst="${r.identity}">${escapeHtml(idCard.title)}</span>
     <span class="stat">&#x2B21;<i>c</i> ${r.credits}</span>
-    <span class="stat">&#x25F4; ${r.clicks}</span>
+    <span class="stat">${pips(r.clicks)}</span>
     <span class="stat">&mu; ${mu}</span>
-    <span class="stat">Link ${r.baseLink}</span>
-    <span class="stat">Agenda pts: ${r.agendaPoints}</span>
+    <span class="stat">Link ${link}</span>
+    <span class="stat">Agenda pts: <b>${r.agendaPoints}</b>/7</span>
     ${r.tags ? `<span class="stat stat-bad">Tags ${r.tags}</span>` : ""}
     ${r.brainDamage ? `<span class="stat stat-bad">Brain ${r.brainDamage}</span>` : ""}
     <span class="stat">Stack ${r.deck.length} \xB7 Heap ${r.discard.length}</span>
+  </div>`);
+    return el.querySelector(".id-name").addEventListener("mouseenter", () => app2.preview(idCard)), el;
+  }
+  function turnBanner(app2) {
+    let s = app2.game.state;
+    if (s.winner)
+      return h(`<div class="turn-banner turn-over">GAME OVER \u2014 ${s.winner.toUpperCase()} WINS (${escapeHtml(s.winReason ?? "")})</div>`);
+    let who2 = s.activePlayer ? `${s.activePlayer === "corp" ? "CORP" : "RUNNER"} TURN` : "SETUP", d = app2.game.decision, thinking = d && app2.viewer !== "all" && d.player !== app2.viewer;
+    return h(`<div class="turn-banner ${s.activePlayer ?? ""}">
+    <span>TURN ${s.turn}</span><span class="tb-sep">//</span><span>${who2}</span>
+    ${thinking ? `<span class="tb-sep">//</span><span class="tb-thinking">${d.player} is thinking&hellip;</span>` : ""}
   </div>`);
   }
   function handRow(app2, g, player, viewer, label) {
@@ -7889,27 +7949,46 @@ button, select, input { font: inherit; }
       for (let id of ids) cardsEl.appendChild(h('<div class="tile tile-back"></div>'));
     return row;
   }
-  function runBanner(g) {
+  function runPanel(g) {
     let run = g.state.run;
-    if (!run || run.ended) return null;
-    let phase = "", events = g.log.events;
+    if (!run || run.ended) return { el: null, focusIceId: null };
+    let phase = "", focusIceId = null, events = g.log.events;
     for (let i = events.length - 1; i >= 0; i--) {
       let ev = events[i];
       if (ev.type === "run-start" || ev.type === "run-end") break;
-      if (ev.type === "encounter-ice") {
-        phase = `encountering ${ev.data.title}`;
-        break;
-      }
       if (ev.type === "approach-ice") {
-        phase = `approaching ${ev.data.rezzed ? ev.data.title : "unrezzed ice"}`;
+        phase = `approaching ${ev.data.rezzed ? ev.data.title : "unrezzed ice"} (position ${ev.data.position + 1})`, focusIceId = ev.data.iceId;
         break;
       }
       if (ev.type === "approach-server") {
         phase = "approaching the server";
         break;
       }
+      if (ev.type === "access-count" || ev.type === "card-accessed") {
+        phase = "accessing cards";
+        break;
+      }
     }
-    return h(`<div class="run-banner">RUN on ${escapeHtml(serverName(run.server))}${phase ? " \u2014 " + escapeHtml(phase) : ""}${run.successful ? " \u2014 SUCCESSFUL" : ""}</div>`);
+    let el = h(`<div class="run-panel">
+    <div class="run-head">RUN on ${escapeHtml(serverName(run.server))}${run.successful ? " \u2014 <b>SUCCESSFUL</b>" : ""}</div>
+  </div>`), encId = run.encounterIce;
+    if (encId) {
+      focusIceId = encId;
+      let ice = g.insts[encId], rows = activeSubs(g, ice).map((x) => {
+        let broken = ice.brokenSubs.includes(x.index);
+        return `<div class="run-sub ${broken ? "sub-broken" : "sub-live"}">
+        <span class="sub-mark">${broken ? "&#x2713;" : "&#x21B3;"}</span>
+        <span>${escapeHtml(x.label)}</span>
+        <span class="sub-state">${broken ? "broken" : "unbroken"}</span>
+      </div>`;
+      }).join("");
+      el.appendChild(h(`<div class="run-encounter">
+      <div class="run-ice-name">ENCOUNTER: ${escapeHtml(ice.card.title)}
+        <span class="run-ice-str">str ${iceStrength(g, encId)}</span></div>
+      <div class="run-subs">${rows || '<div class="run-sub sub-none">no active subroutines</div>'}</div>
+    </div>`));
+    } else phase && el.appendChild(h(`<div class="run-phase">${escapeHtml(phase)}</div>`));
+    return { el, focusIceId };
   }
   function renderLog(g, viewer, logEl) {
     logEl.innerHTML = "";
@@ -7929,30 +8008,33 @@ button, select, input { font: inherit; }
     }
     if (!d) return;
     if (!(viewer === "all" || d.player === viewer)) {
-      promptEl.appendChild(h(`<div class="prompt-head">Waiting for ${d.player}\u2026</div>`));
+      promptEl.appendChild(h(`<div class="prompt-head prompt-waiting">${d.player === "corp" ? "Corp" : "Runner"} is thinking&hellip;</div>`));
       return;
     }
     if (promptEl.appendChild(h(`<div class="prompt-side">${d.player.toUpperCase()} decision</div>`)), promptEl.appendChild(h(`<div class="prompt-head">${escapeHtml(d.prompt)}</div>`)), d.kind === "number") {
-      let row = h(`<div class="num-row"><input type="number" min="${d.min}" max="${d.max}" value="${d.min}" class="num-input"><button class="btn btn-primary">OK</button></div>`), input = row.querySelector("input");
+      let row = h(`<div class="num-row"><input type="number" min="${d.min}" max="${d.max}" value="${d.min}" class="num-input"><button class="btn btn-primary">OK &#x23CE;</button></div>`), input = row.querySelector("input");
       row.querySelector("button").addEventListener("click", () => app2.answer(Number(input.value))), promptEl.appendChild(row), input.focus();
       return;
     }
-    for (let o of d.options) {
-      let b = h(`<button class="btn opt-btn">${escapeHtml(o.label)}</button>`);
+    d.options.forEach((o, i) => {
+      let key = i < 9 ? `<span class="kbd">${i + 1}</span>` : "", b = h(`<button class="btn opt-btn">${key}${escapeHtml(o.label)}</button>`);
       b.addEventListener("click", () => app2.answer(o.id)), promptEl.appendChild(b);
-    }
+    });
   }
   function render(app2) {
     let { game, viewer, els } = app2, g = game.g;
     app2.optionMap = buildOptionMap(
       game.decision && (viewer === "all" || game.decision.player === viewer) ? game.decision : null
-    ), els.corpZone.innerHTML = "", els.corpZone.appendChild(corpBar(g));
+    ), els.corpZone.innerHTML = "", els.corpZone.appendChild(corpBar(app2, g));
     let serversRow = h('<div class="servers-row"></div>'), remotes = Object.keys(g.state.corp.servers).filter((s) => s.startsWith("remote"));
     for (let sid of [...remotes, "archives", "rd", "hq"])
       serversRow.appendChild(serverBox(app2, g, sid, viewer));
-    els.corpZone.appendChild(serversRow), (viewer === "corp" || viewer === "all") && els.corpZone.appendChild(handRow(app2, g, "corp", viewer, "HQ")), els.midZone.innerHTML = "";
-    let rb = runBanner(g);
-    rb && els.midZone.appendChild(rb), els.runnerZone.innerHTML = "", els.runnerZone.appendChild(runnerBar(g));
+    els.corpZone.appendChild(serversRow), (viewer === "corp" || viewer === "all") && els.corpZone.appendChild(handRow(app2, g, "corp", viewer, "HQ")), els.midZone.innerHTML = "", els.midZone.appendChild(turnBanner(app2));
+    let { el: runEl, focusIceId } = runPanel(g);
+    if (runEl && els.midZone.appendChild(runEl), focusIceId != null)
+      for (let iceEl of document.querySelectorAll(`[data-inst="${focusIceId}"]`))
+        iceEl.classList.add("tile-current-ice");
+    els.runnerZone.innerHTML = "", els.runnerZone.appendChild(runnerBar(app2, g));
     let rig = g.state.runner.rig, rigRow = h('<div class="rig-row"></div>');
     for (let kind of ["program", "hardware", "resource"]) {
       let col = h(`<div class="rig-col"><div class="rig-label">${kind}s</div><div class="rig-cards"></div></div>`), cardsEl = col.querySelector(".rig-cards");
@@ -7999,16 +8081,41 @@ button, select, input { font: inherit; }
       let seed = cfg.seed;
       this.game = new Game(this.cardsJson, gameConfig(cfg.corpDeck, cfg.runnerDeck, seed));
       let ais = {};
-      cfg.side !== "corp" && (ais.corp = new CorpAI({ level: cfg.level, seed: seed * 7 + 1 })), cfg.side !== "runner" && (ais.runner = new RunnerAI({ level: cfg.level, seed: seed * 13 + 2 })), this.ctl = new AIController(this.game, ais), this.viewer = cfg.side === "watch" ? "all" : cfg.side, this._seen = 0, $("#setup").style.display = "none", $("#table").style.display = "", $("#watch-controls").style.display = cfg.side === "watch" ? "" : "none", this.els.inspector.innerHTML = '<div class="inspector-head">CARD DETAILS</div><div class="inspector-empty">Click any card \u2014 details appear here.</div>', cfg.side !== "watch" && this.ctl.run(), render(this), this.autoInspect();
+      cfg.side !== "corp" && (ais.corp = new CorpAI({ level: cfg.level, seed: seed * 7 + 1 })), cfg.side !== "runner" && (ais.runner = new RunnerAI({ level: cfg.level, seed: seed * 13 + 2 })), this.ctl = new AIController(this.game, ais), this.viewer = cfg.side === "watch" ? "all" : cfg.side, this._seen = 0, $("#setup").style.display = "none", $("#table").style.display = "", $("#watch-controls").style.display = cfg.side === "watch" ? "" : "none", this.els.inspector.innerHTML = '<div class="inspector-head">CARD DETAILS</div><div class="inspector-empty">Hover or click any card \u2014 details appear here.</div>', this._shownCard = null, render(this), this.autoInspect(), cfg.side !== "watch" && this.pump();
     },
     answer(id) {
-      try {
-        this.game.choose(id);
-      } catch (e) {
-        console.error(e);
+      if (!this._pacing) {
+        try {
+          this.game.choose(id);
+        } catch (e) {
+          console.error(e);
+          return;
+        }
+        this.closePopover(), render(this), this.autoInspect(), this.viewer !== "all" && this.pump();
+      }
+    },
+    // paced AI advance: one AI decision per tick so the log/board animate
+    // instead of jumping a whole turn. window.__PACE__ = 0 -> synchronous
+    // (used by the jsdom smoke test).
+    pump() {
+      let pace = window.__PACE__ ?? 110;
+      if (pace <= 0) {
+        this.ctl.run(), render(this), this.autoInspect();
         return;
       }
-      this.closePopover(), this.viewer !== "all" && this.ctl.run(), render(this), this.autoInspect();
+      if (this._pacing) return;
+      this._pacing = !0;
+      let tick = () => {
+        let progressed = !this.game.state.winner && this.ctl.step();
+        render(this), this.autoInspect();
+        let d = this.game.decision;
+        if (progressed && !this.game.state.winner && d && this.ctl.ais[d.player]) {
+          this._paceTimer = setTimeout(tick, pace);
+          return;
+        }
+        this._pacing = !1, render(this);
+      };
+      tick();
     },
     step(n) {
       for (let i = 0; i < n && !(this.game.state.winner || !this.ctl.step()); i++) ;
@@ -8037,7 +8144,7 @@ button, select, input { font: inherit; }
       this._seen = evs.length;
     },
     newGame() {
-      $("#table").style.display = "none", $("#setup").style.display = "";
+      clearTimeout(this._paceTimer), this._pacing = !1, $("#table").style.display = "none", $("#setup").style.display = "";
     },
     // ---- board interaction ----
     onCardClick(instId, el, card) {
@@ -8053,7 +8160,14 @@ button, select, input { font: inherit; }
     },
     inspect(card) {
       let el = this.els.inspector;
-      el.innerHTML = '<div class="inspector-head">CARD DETAILS</div>' + cardPanelHtml(card), el.classList.remove("inspector-flash"), el.offsetWidth, el.classList.add("inspector-flash"), el.scrollTop = 0;
+      el.innerHTML = '<div class="inspector-head">CARD DETAILS</div>' + cardPanelHtml(card), this._shownCard = card, el.classList.remove("inspector-flash"), el.offsetWidth, el.classList.add("inspector-flash"), el.scrollTop = 0;
+    },
+    // hover preview: same panel, no flash (don't grab attention on mouse-over)
+    preview(card) {
+      if (card === this._shownCard) return;
+      this._shownCard = card;
+      let el = this.els.inspector;
+      el.classList.remove("inspector-flash"), el.innerHTML = '<div class="inspector-head">CARD DETAILS</div>' + cardPanelHtml(card), el.scrollTop = 0;
     },
     popover(anchor, opts) {
       this.closePopover();
@@ -8104,7 +8218,19 @@ button, select, input { font: inherit; }
       log: $("#log"),
       prompt: $("#prompt"),
       inspector: $("#inspector")
-    }, document.body.addEventListener("click", () => app.closePopover()), $("#btn-step1").addEventListener("click", () => app.step(1)), $("#btn-step25").addEventListener("click", () => app.step(25)), $("#btn-stepturn").addEventListener("click", () => app.stepTurn()), buildSetup();
+    }, document.body.addEventListener("click", () => app.closePopover()), $("#btn-step1").addEventListener("click", () => app.step(1)), $("#btn-step25").addEventListener("click", () => app.step(25)), $("#btn-stepturn").addEventListener("click", () => app.stepTurn()), document.addEventListener("keydown", (e) => {
+      if ($("#table").style.display === "none") return;
+      if (e.key === "Escape") {
+        app.closePopover();
+        return;
+      }
+      if (e.target.tagName === "INPUT") {
+        e.key === "Enter" && ($(".num-row button")?.click(), e.preventDefault());
+        return;
+      }
+      let opts = [...(document.querySelector(".popover") ?? $("#prompt")).querySelectorAll(".opt-btn")];
+      opts.length && (e.key >= "1" && e.key <= "9" ? (opts[Number(e.key) - 1]?.click(), e.preventDefault()) : e.key === "Enter" && opts.length === 1 && (opts[0].click(), e.preventDefault()));
+    }), buildSetup();
   }
   init().catch((e) => {
     document.body.innerHTML = `<pre style="color:#f66;padding:2em">${escapeHtml(e.stack ?? String(e))}</pre>`;

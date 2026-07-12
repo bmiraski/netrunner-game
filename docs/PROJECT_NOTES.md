@@ -40,10 +40,20 @@
     full soak games x 3 viewers, markup on all 132 cards, option-map, decks).
     tools/ui-smoke.js drives the BUILT bundle in jsdom through complete games
     (runner / corp / watch seats) by clicking rendered buttons.
-- Next: **Phase 5b — UI polish** after user reviews the checkpoint build.
-  Remaining list at the end of docs/UI.md (run/subroutine visualization,
-  keyboard controls, card frame polish, pacing, phase affordances). Then
-  Phase 6 (tutorial).
+- **Phase 5 (UI): COMPLETE** — 2026-07-11. Checkpoint 5a + polish 5b + user
+  feedback round (setup alignment, CARD DETAILS panel with flash, auto-inspect
+  of every played/revealed card). 5b added: run panel with per-subroutine
+  broken/unbroken state + pulsing current-ice marker, turn banner + click
+  pips + active-player glow + effective link, keyboard controls (1-9 / Enter /
+  Escape, works on popovers), hover preview in inspector, subtype lines on
+  tiles, paced AI advance (~110ms/decision, window.__PACE__=0 for tests).
+  All verified: 232 tests + jsdom full-game click-throughs (sync AND paced).
+  User decision: remaining bugs found in play are handled in later phases.
+- Next: **Phase 6 — Tutorial mode** (BUILD_PLAN): scripted first game (fixed
+  decks/draws) with overlay callouts driven by the engine's decision protocol,
+  then a practice mode with hints on demand. The tutorial should reuse the
+  UI's prompt/highlight machinery (docs/UI.md) — likely a scripted decision
+  answerer (like an AI seat) + an overlay layer keyed on decision context tags.
 
 ## GitHub (sync at the end of every step)
 - Repo: `bmiraski/netrunner-game` (main). Access token: `.git-token` file in

@@ -1,4 +1,4 @@
-# UI Architecture (Phase 5)
+# UI Architecture (Phase 5 — COMPLETE 2026-07-11)
 
 How the browser UI works and how to extend it. Companion to `ENGINE.md`
 (decision protocol) and `AI.md` (AIController human-seat pattern).
@@ -96,13 +96,43 @@ new engine events must be added there.
   modes). Needs jsdom (`JSDOM_DIR=/path/to/dir-with-node_modules` supported).
   Run after every `npm run build`.
 
-## Phase 5 remaining (post-checkpoint polish list)
+## Run visualization
 
-- Run visualization: step-by-step subroutine display on the encountered ice
-  (broken/unbroken state per sub), approach-position marker on the ice column.
-- Keyboard controls (number keys for options, Enter/Escape).
-- Nicer card tiles (frame layout closer to real cards), hover previews.
-- Turn/click flow affordances: current-player banner, click pips, phase label.
-- Animations/pacing for AI actions (log currently jumps a whole AI turn).
-- Trackers: recurring-credit pools on cards, link during traces.
-- Mobile/narrow layout is out of scope (desktop browser deliverable).
+`runPanel()` (render.js) in the mid zone: run header + current phase
+(approaching ice N / approaching the server / accessing). During an
+encounter (`g.state.run.encounterIce`) it lists every active subroutine
+(`activeSubs`) with live broken/unbroken state from `ice.brokenSubs`
+(red ↳ unbroken, green ✓ struck-through broken) plus current ice strength
+(`iceStrength`). The approached/encountered ice tile on the board gets a
+pulsing magenta `.tile-current-ice` marker.
+
+## Turn & click affordances
+
+Turn banner in the mid zone: `TURN n // CORP|RUNNER TURN`, color-coded, plus
+a pulsing "x is thinking…" note while the AI seat is deciding. Side bars show
+clicks as gold pips (◴), agenda points as n/7, the active player's bar glows,
+and the runner's link is the effective total (`baseLink + linkBonus`).
+
+## Keyboard + hover
+
+Keys 1–9 answer the visible prompt (buttons show their number chips), Enter
+confirms a sole option or the number input, Escape closes the popover. When
+a popover is open the number keys target it instead of the prompt panel.
+Hovering any faceup card previews it in the inspector without the flash;
+clicking (or auto-inspect) flashes.
+
+## AI pacing
+
+`app.pump()` advances the AI seat one decision per ~110 ms tick (`setTimeout`
+loop), repainting each time so the log and board animate instead of jumping a
+whole corp turn. Prompt shows "Corp is thinking…" and `answer()` is a no-op
+while pacing. `window.__PACE__ = 0` makes the advance synchronous — the jsdom
+smoke test sets this. Watch mode is unaffected (manual Step buttons).
+
+## Phase 5 status
+
+Complete per BUILD_PLAN: full board, run visualization with per-sub state,
+trackers, scrollable log, legal-action highlighting, keyboard + mouse, dark
+theme. Deferred to later phases (9 unless noted): real card art via imageUrl,
+richer animations, balance tuning, any bugs found in play. Tutorial overlays
+are Phase 6; they should drive the same prompt/highlight machinery.

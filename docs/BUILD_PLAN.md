@@ -1,6 +1,6 @@
 # Netrunner vs. Computer — Build Plan
 
-> **Status:** Phases 1–4 complete; Phase 5 checkpoint (5a) playable (2026-07-11). All 132 Revised Core cards scripted; heuristic Corp & Runner AIs (2 difficulty levels) + 7 precon decks; browser UI with setup screen, board, prompts, log, and a committed double-clickable `netrunner.html`; 232 passing tests incl. jsdom full-game click-throughs (`docs/ENGINE.md`, `docs/CARD_COVERAGE.md`, `docs/AI.md`, `docs/UI.md`). Code on GitHub: `bmiraski/netrunner-game`. Read `PROJECT_NOTES.md` for current state before starting work. Next: Phase 5b (UI polish) after checkpoint review.
+> **Status:** Phases 1–5 complete (2026-07-11). All 132 Revised Core cards scripted; heuristic Corp & Runner AIs (2 difficulty levels) + 7 precon decks; browser UI with setup screen, board, prompts, log, and a committed double-clickable `netrunner.html`; 232 passing tests incl. jsdom full-game click-throughs (`docs/ENGINE.md`, `docs/CARD_COVERAGE.md`, `docs/AI.md`, `docs/UI.md`). Code on GitHub: `bmiraski/netrunner-game`. Read `PROJECT_NOTES.md` for current state before starting work. Phase 5 delivered the full UI: run visualization with per-subroutine state, turn/click affordances, keyboard + mouse, hover/auto card inspection, paced AI turns. Next: Phase 6 (tutorial mode).
 
 ## Decisions (locked)
 - **Platform:** Browser app — single self-contained HTML/JS file. Double-click to play on Mac; no install, no server.
