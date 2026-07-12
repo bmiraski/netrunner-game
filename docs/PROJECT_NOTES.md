@@ -115,7 +115,8 @@ tutorial/ analysis/ stats/   ← empty, Phases 6+
 - Verified: counts, per-card quantities, and titles all match the ADN49 checklist
 
 ## Environment gotchas (learned the hard way)
-- Sandbox bash has **no usable outbound network** (curl exit 56). Only `mcp__workspace__web_fetch` works for HTTP.
+- Sandbox bash has **no general outbound network** (curl exit 56), but git-over-https to github.com AND `npm install` DO work (allowlisted). Only `mcp__workspace__web_fetch` works for arbitrary HTTP.
+- `/tmp` may contain stale dirs from prior sessions owned by another user (rm: Permission denied). Don't fight them — use a fresh path (e.g. `/tmp/nr5.git` when `/tmp/nr.git` is unwritable).
 - web_fetch truncates large responses (~100KB); oversize results get saved to a host-side file whose path is in the error — Read that file in chunks instead of re-fetching. For NRDB data, per-card fetches (`/api/2.0/public/card/<code>`) are the reliable fallback.
 - Path mapping: outputs folder = `/sessions/<session>/mnt/outputs/` in bash, but the long host path (see system prompt) for Read/Write tools.
 - Project knowledge (PDFs, memory) is mounted **read-only**; project docs live here in `netrunner/docs/` instead, and the user copies key docs into Claude.ai project knowledge.
