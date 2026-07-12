@@ -19,6 +19,21 @@ async function loadCards() {
 
 const $ = sel => document.querySelector(sel);
 
+// Events whose card should be auto-shown in the inspector the moment it
+// happens — anything "played" onto the table or publicly revealed, so the
+// player can immediately read the details and assess.
+const REVEAL_EVENTS = {
+  'operation-played': d => d.id,
+  'event-played':     d => d.id,
+  'runner-installed': d => d.id,
+  'card-rezzed':      d => d.id,
+  'ice-rezzed':       d => d.id,
+  'encounter-ice':    d => d.iceId,
+  'card-accessed':    d => d.id,
+  'agenda-scored':    d => d.id,
+  'agenda-stolen':    d => d.id,
+};
+
 const app = {
   cardsJson: null,
   game: null, ctl: null,
@@ -36,11 +51,15 @@ const app = {
     if (cfg.side !== 'runner') ais.runner = new RunnerAI({ level: cfg.level, seed: seed * 13 + 2 });
     this.ctl = new AIController(this.game, ais);
     this.viewer = cfg.side === 'watch' ? 'all' : cfg.side;
+    this._seen = 0;
     $('#setup').style.display = 'none';
     $('#table').style.display = '';
     $('#watch-controls').style.display = cfg.side === 'watch' ? '' : 'none';
+    this.els.inspector.innerHTML =
+      '<div class="inspector-head">CARD DETAILS</div><div class="inspector-empty">Click any card — details appear here.</div>';
     if (cfg.side !== 'watch') this.ctl.run();
     render(this);
+    this.autoInspect();
   },
   answer(id) {
     try {
@@ -52,10 +71,12 @@ const app = {
     this.closePopover();
     if (this.viewer !== 'all') this.ctl.run();
     render(this);
+    this.autoInspect();
   },
   step(n) {                          // watch mode
     for (let i = 0; i < n; i++) if (this.game.state.winner || !this.ctl.step()) break;
     render(this);
+    this.autoInspect();
   },
   stepTurn() {
     const g = this.game;
@@ -65,6 +86,20 @@ const app = {
       if (g.state.turn !== startTurn || g.state.activePlayer !== startPlayer) break;
     }
     render(this);
+    this.autoInspect();
+  },
+  // show the most recently played/revealed card in the inspector (new events
+  // since the last repaint only — manual inspects are never overridden by
+  // stale history)
+  autoInspect() {
+    const evs = this.game.log;
+    for (let i = evs.length - 1; i >= this._seen; i--) {
+      const pick = REVEAL_EVENTS[evs[i].type];
+      if (!pick) continue;
+      const it = this.game.g.insts[pick(evs[i].data)];
+      if (it) { this.inspect(it.card); break; }
+    }
+    this._seen = evs.length;
   },
   newGame() {
     $('#table').style.display = 'none';
@@ -84,7 +119,13 @@ const app = {
     if (opts.length > 1) return this.popover(el, opts);
   },
   inspect(card) {
-    this.els.inspector.innerHTML = cardPanelHtml(card);
+    const el = this.els.inspector;
+    el.innerHTML = '<div class="inspector-head">CARD DETAILS</div>' + cardPanelHtml(card);
+    // restart the attention flash
+    el.classList.remove('inspector-flash');
+    void el.offsetWidth;
+    el.classList.add('inspector-flash');
+    el.scrollTop = 0;
   },
   popover(anchor, opts) {
     this.closePopover();

@@ -66,6 +66,7 @@ async function runSide(side) {
   }
   if (errors.length) throw new Error(`${side}: ${errors.length} page errors, first: ${errors[0]?.stack ?? errors[0]}`);
   if (!$$('.log-over').length) throw new Error(`${side}: game did not finish in ${CAP} interactions`);
+  if (!$('#inspector .card-full')) throw new Error(`${side}: auto-inspect never populated the card details panel`);
   const logLines = $$('.log-line').length;
   const over = $$('.log-over')[0].textContent;
   console.log(`  ok  ${side.padEnd(6)} — finished after ${clicks} interactions, ${logLines} log lines: ${over.slice(0, 70)}`);

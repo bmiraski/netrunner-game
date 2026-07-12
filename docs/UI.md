@@ -71,7 +71,12 @@ Styled text cards (locked decision; `imageUrl` on every card is the future
 hook). `cardtext.js` escapes everything, then substitutes
 `[credit] [click] [subroutine] [trash] [mu] [recurring-credit] [link]` and
 re-allows `<strong>`. Clicking any visible card shows the full card in the
-inspector panel. Faction colors in `FACTION` (cardtext.js).
+"CARD DETAILS" inspector panel with an attention flash (glow animation).
+**Auto-inspect:** whenever a card is played/revealed (`REVEAL_EVENTS` in
+main.js: operation/event played, install, rez, encounter, access,
+score/steal), the newest such card since the last repaint is shown
+automatically so the player can immediately assess it. Faction colors in
+`FACTION` (cardtext.js).
 
 ## Log rendering
 
