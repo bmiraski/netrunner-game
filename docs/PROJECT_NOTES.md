@@ -64,6 +64,46 @@
   - Verification: suite 237 (tests/tutorial.test.js replays the full script —
     any engine/AI change that shifts the tutorial game fails the build);
     ui-smoke tutorial mode clicks the bundle through guided + free play.
+- **Rules-audit correction pass: COMPLETE** — 2026-07-25. An audit against
+  the FFG Rules Reference v1.1 found 7 engine-level gaps; 5 were fixed this
+  pass (2 remain open/deferred by user choice — see below):
+  1. **Trace tie-break** (`engine/effects.js` `trace()`): a trace strength
+     equal to link strength now FAILS (favors the Runner), per Rules
+     Reference wording ("equal to or greater than" the link means
+     unsuccessful) — was `>=` (Corp-favored tie), now `>`.
+  2. **Server-approach jack-out** (`engine/run.js` `doRun()`): the Runner now
+     gets a mandatory jack-out-or-continue decision at server approach (after
+     all ice is passed, or immediately if the server has none) — in addition
+     to the existing per-ice jack-out offered from the 2nd approach on.
+  3. **`onTurnEnd` hook** (`engine/game.js`): a new generic hook category,
+     mirroring `onTurnStart`, fires for the active player at their own turn
+     end. No card uses it yet.
+  4. **Hand-size-below-zero flatline** (`engine/state.js` + `effects.js`): a
+     new `handSizeRaw()` (unclamped) backs a second, distinct flatline check
+     in `discardToHandSize()` for the Runner — brain damage that pushes
+     effective hand size below zero now flatlines even outside the
+     damage-exceeds-grip path.
+  5. **Runner-chosen access order** (`engine/run.js` `accessServer()`): when
+     breaching Archives or a remote server with more than one card to access,
+     the Runner now picks the order (Rules Reference 5.5) instead of a silent
+     fixed-array-order loop. HQ (random) and R&D (deck order) are unaffected.
+  - Reconciled the full test suite and the guided tutorial script against
+    the new decisions: every one of the 64 initially-failing tests turned
+    out to need only a new jack-out or access-order answer inserted at the
+    right point (or, for the trace-tie test specifically, one such insertion
+    that had been masking the real assertion) — no test's expected VALUE
+    needed to change for rules-correctness reasons; none of the 64 failures
+    actually exercised a genuine strength-equals-link tie. `tutorial/steps.js`
+    gained two new
+    jack-out steps (remote1 approach after Adonis run; R&D approach after
+    Viktor 1.0 is broken). Final count: **237 passing, 0 failing**
+    (unchanged from before the audit — no tests added or removed).
+    `tools/soak.js 40` (480 games): 0 stalls, 0 aiErrors, 0 unexpected
+    deck-outs.
+  - Deferred by user choice (still open, not touched this pass): Corp
+    non-ice rez window currently only offered at server approach (not also
+    for e.g. upgrades rezzed reactively mid-encounter); no generic Runner
+    encounter-side paid-ability window (beyond the boost/break menu).
 - Next: **Phase 7 — Post-game feedback** (BUILD_PLAN): rule-based analysis of
   the event log (economy efficiency, floated clicks, missed scoring windows,
   run risk/reward, unspent resources at loss, key turning points) presented

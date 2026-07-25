@@ -39,9 +39,12 @@ the ONLY way to move cards. Ice arrays: index 0 = innermost, push = outermost.
   score windows (before/after every corp action).
 - `run.js` — run timing per Rules Reference: approach (jack-out from 2nd
   approach) → corp rez window → encounter (breaker menu, then unbroken subs
-  in order) → approach server → content rez window → successful → access.
-  Access: HQ random (seeded), R&D top-in-order, Archives all faceup,
-  remotes all content. Steal is mandatory; trashCost offers paid trash.
+  in order) → approach server → mandatory jack-out decision (offered here too,
+  even against an unprotected server or once all ice is passed) → content rez
+  window → successful → access. Access: HQ random (seeded), R&D top-in-order,
+  Archives and remote servers let the Runner choose the access order when
+  more than one card is there (Rules Reference 5.5). Steal is mandatory;
+  trashCost offers paid trash.
 
 ## Card scripts (cards/registry.js)
 `define(code, script)` — keyed by NRDB code. Hooks (all optional, `*` = generator
@@ -73,6 +76,9 @@ bypassAbility: {req(g,it,iceId), cost(g,iceId), effect not needed}  Femme
 
 // triggers
 onTurnStart*(g,{instId})   PAD, Adonis, Aesop's, Darwin (owner's turn only)
+onTurnEnd*(g,{instId})     fires for the active player at their own turn end
+                           (after discard, before the turn-end log event);
+                           no card uses this yet
 onRunSuccessful*(g,{server,instId})       Gabriel, Datasucker, Hemorrhage
 onRunSuccessfulHere*(g,{server,instId})   upgrades: Ash, Bernice, Hokusai
 onRunEnd*(g,{server,successful,instId})   DRT, Doppelgänger (queue follow-up:

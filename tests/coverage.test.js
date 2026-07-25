@@ -52,7 +52,9 @@ export default [
   const otherId = game.state.corp.archives.find(id => id !== prId);
 
   t.prefix('run:archives');
+  t.pick('continue');                    // approach-server jack-out: continue
   assert.equal(lastEvent(game, 'access-count').data.n, 2);
+  t.label('Priority Requisition');       // runner-chosen access order: agenda first
   assert.equal(lastEvent(game, 'run-end').data.successful, true);
   assert.equal(game.state.runner.agendaPoints, 3);
   assert.equal(inst(g, prId).zone, 'runner-score');
@@ -65,6 +67,7 @@ export default [
     const t = driver(game).keepHands();
     t.creditsOut('corp').discardFirst();
     t.prefix('run:hq');
+    t.pick('continue');                  // approach-server jack-out: continue
     return game;
   };
   const a = setup(99);
@@ -104,6 +107,7 @@ export default [
   assert.equal(game.decision.runStep, 'rez-ice');
   t.pick('done');
   assert.equal(lastEvent(game, 'ice-passed').data.rezzed, false);
+  t.pick('continue');                    // approach-server jack-out: continue
   assert.equal(lastEvent(game, 'access-count').data.n, 0);
   assert.equal(lastEvent(game, 'run-successful').data.server, 'archives');
   assert.equal(lastEvent(game, 'run-end').data.successful, true);
@@ -130,6 +134,8 @@ export default [
   assert.equal(cardOf(g, approach2.data.iceId).title, 'Wall of Static');
   t.pick('done');
 
+  assert.equal(game.decision.runStep, 'jack-out');   // new approach-server jack-out
+  t.pick('continue');
   assert.equal(lastEvent(game, 'run-end').data.successful, true);
 }],
 
@@ -166,6 +172,7 @@ export default [
   t.label('break "Trace 3');
   assert.ok(!game.decision.options.some(o => o.id.startsWith('boost:')));
   t.pick('continue');
+  t.pick('continue');                    // approach-server jack-out: continue
   assert.equal(game.state.runner.tags, 0);          // trace sub never fired
   assert.equal(lastEvent(game, 'run-end').data.successful, true);
 }],
@@ -268,6 +275,7 @@ export default [
   const before = game.state.runner.credits;
   t.prefix('run:remote1');
   assert.equal(lastEvent(game, 'run-start').data.bpCredits, 2);
+  t.pick('continue');   // approach-server jack-out: continue
   t.pick('done');    // decline to rez PAD Campaign before access
   t.pick('trash');   // PAD Campaign trash cost is 4cr; 2 come from the bp pool
   assert.equal(lastEvent(game, 'card-trashed').data.title, 'PAD Campaign');
@@ -308,6 +316,7 @@ export default [
   const runnerCreditsBefore = game.state.runner.credits;
   t.num(2);   // corp boosts trace 3 -> 5
   t.num(6);   // runner boosts link 0 -> 6, exceeding the trace
+  t.pick('continue');   // approach-server jack-out: continue
   assert.equal(game.state.runner.tags, 0);
   assert.equal(game.state.corp.credits, corpCreditsBefore - 2);
   // -6 link boost, +2 Gabriel (run still succeeds after failed trace)

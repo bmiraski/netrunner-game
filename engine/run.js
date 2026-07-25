@@ -107,7 +107,17 @@ export function* doRun(g, sid, mods = {}) {
   // 4. approach server
   if (!s.run.ended && !s.winner) {
     emit(g, 'approach-server', { server: sid });
-    yield* corpRunWindow(g, sid, null);
+    // 5.2 the Runner may jack out here too — even against an unprotected
+    // server, or after passing every piece of ice (Rules Reference [5.2]).
+    if (!s.run.cannotJackOut) {
+      const jo = yield choice('runner', 'Jack out or continue the run?',
+        [opt('continue', 'Continue the run'), opt('jack-out', 'Jack out')], { runStep: 'jack-out' });
+      if (jo === 'jack-out') {
+        s.run.ended = true;
+        emit(g, 'jack-out', { server: sid });
+      }
+    }
+    if (!s.run.ended && !s.winner) yield* corpRunWindow(g, sid, null);
     if (!s.run.ended && !s.winner) {
       // Sneakdoor Beta: redirect on success
       if (mods.changeServerOnSuccess) {
@@ -339,10 +349,27 @@ export function* accessServer(g, sid) {
   if (s.run?.accessLimit != null) ids = ids.slice(0, s.run.accessLimit);                     // Hudson
   emit(g, 'access-count', { server: sid, n: ids.length });
 
-  for (const id of ids) {
+  // Archives and remote servers: the Runner accesses/resolves multiple cards
+  // "in the order of their choosing" (Rules Reference [5.5]). HQ (random) and
+  // R&D (fixed deck order) are not player-ordered.
+  const runnerOrders = sid === 'archives' || !isCentral(sid);
+  const remaining = [...ids];
+  while (remaining.length) {
     if (s.winner || (s.run && s.run.endAccess)) return;
+    let id = remaining[0];
+    if (runnerOrders && remaining.length > 1) {
+      const pick = yield choice('runner', 'Access which card next?',
+        remaining.map(rid => opt(`a:${rid}`, accessOrderLabel(g, rid))), { runStep: 'access-order' });
+      id = Number(pick.split(':')[1]);
+    }
+    remaining.splice(remaining.indexOf(id), 1);
     yield* accessCard(g, id, sid);
   }
+}
+
+function accessOrderLabel(g, id) {
+  const it = inst(g, id);
+  return (it.faceup || it.rezzed) ? it.card.title : 'Unrezzed/unknown card';
 }
 
 export function* accessCard(g, id, sid) {

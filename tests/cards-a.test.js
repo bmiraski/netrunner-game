@@ -108,6 +108,7 @@ export default [
   g.state.runner.credits = 10;
   t.label('Install Battering Ram');
   t.prefix('run:remote1');
+  t.pick('continue'); // approach-server jack-out: continue
   t.pick('done'); // decline to rez (0-cost asset, doesn't matter)
   t.pick('pay');
   t.label('Battering Ram'); // corp picks which program to trash
@@ -144,6 +145,7 @@ export default [
   t.prefix('run:hq');
   t.prefix('rez');
   t.pick('continue'); // both subs fire, accessLimit stays 1
+  t.pick('continue'); // approach-server jack-out: continue
   assert.equal(lastEvent(game, 'access-count').data.n, 1);
 }],
 
@@ -256,6 +258,7 @@ export default [
   t.creditsOut('corp').discardFirst();
   g.state.runner.credits = 20;
   t.prefix('run:remote1');
+  t.pick('continue'); // approach-server jack-out: continue
   t.num(0); // corp trace boost (base 4 vs link 0 succeeds regardless)
   t.num(0); // runner link boost
   assert.equal(lastEvent(game, 'trace-result').data.success, true);
@@ -268,10 +271,13 @@ export default [
   const g = game.g;
   const t = driver(game).keepHands();
   t.label('Install Priority Requisition').pick('t:new');
+  const prId = g.state.corp.servers.remote1.content[0];
   t.label('Install Strongbox').label('In remote1');
   t.pick(game.decision.options.find(o => o.id.startsWith('rez')).id); // rez Strongbox
   t.creditsOut('corp').discardFirst();
   t.prefix('run:remote1');
+  t.pick('continue'); // approach-server jack-out: continue
+  t.pick(`a:${prId}`); // runner-chosen access order: Priority Requisition first
   const clicksBefore = g.state.runner.clicks;
   t.pick('steal');
   assert.equal(g.state.runner.agendaPoints, 3);
@@ -301,6 +307,7 @@ export default [
   t.creditsOut('corp').discardFirst();
   const handBefore = g.state.runner.hand.length;
   t.prefix('run:remote1');
+  t.pick('continue'); // approach-server jack-out: continue
   assert.equal(g.state.runner.agendaPoints, 3);
   assert.equal(g.state.runner.hand.length, handBefore - 1);
   assert.equal(lastEvent(game, 'damage').data.why, 'Personal Evolution');
@@ -341,6 +348,7 @@ export default [
   assert.equal(inst(g, nId).counters.agenda, 1);
   t.creditsOut('corp').discardFirst(); // finish corp turn 2 (1 click left)
   t.prefix('run:hq');
+  t.pick('continue'); // approach-server jack-out: continue
   t.label('Hosted agenda counter');
   assert.equal(inst(g, nId).counters.agenda, 0);
   assert.equal(lastEvent(game, 'run-end').data.successful, false);
@@ -357,6 +365,7 @@ export default [
   t.creditsOut('corp').discardFirst();
   const handBefore = g.state.runner.hand.length;
   t.prefix('run:remote1');
+  t.pick('continue'); // approach-server jack-out: continue
   t.pick('done'); // decline to rez
   t.pick('pay');
   assert.equal(g.state.runner.hand.length, handBefore - 4);
@@ -392,6 +401,7 @@ export default [
   t.creditsOut('corp').discardFirst();
   const handBefore = g.state.runner.hand.length;
   t.prefix('run:remote1');
+  t.pick('continue'); // approach-server jack-out: continue
   t.pick('done');
   t.pick('pay');
   assert.equal(g.state.runner.tags, 1);
@@ -425,6 +435,7 @@ export default [
   assert.equal(inst(g, hbId).zone, 'corp-hand');
   assert.equal(lastEvent(game, 'card-to-hand').data.title, 'Himitsu-Bako');
   t.pick('done'); // close the corp window; the ice is gone so the run continues unopposed
+  t.pick('continue'); // approach-server jack-out: continue
   assert.equal(lastEvent(game, 'run-end').data.successful, true);
 }],
 
@@ -528,6 +539,7 @@ export default [
   t.creditsOut('corp').discardFirst();
   // runner now runs, then corp can play it on the turn after that
   t.prefix('run:hq');
+  t.pick('continue'); // approach-server jack-out: continue
   t.creditsOut('runner');
   assert.ok(game.decision.options.some(o => o.label.includes('Play Neural EMP')));
   const handBefore = g.state.runner.hand.length;
@@ -562,6 +574,7 @@ export default [
   t.creditsOut('corp').discardFirst();
   const handBefore = g.state.runner.hand.length;
   t.prefix('run:remote1');
+  t.pick('continue'); // approach-server jack-out: continue
   assert.equal(g.state.runner.hand.length, handBefore - 1);
 }],
 

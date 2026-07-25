@@ -45,6 +45,11 @@ export const GUIDED_STEPS = [
     text: 'The corp built REMOTE 1 and rezzed Adonis Campaign there — it pays them 3 credits every turn. The server has NO ice protecting it. Running an undefended server is free money: click Run on remote1.',
   },
   {
+    match: { ctx: 'runStep', promptIncludes: 'Jack out' }, allow: { id: 'continue' },
+    title: 'Jack out?',
+    text: 'At the edge of any server — even one with no ice — you may jack out instead of finishing the run. Jacking out ends the run immediately with no access. Nothing here threatens you: continue.',
+  },
+  {
     match: { ctx: 'runStep', promptIncludes: 'Adonis' }, allow: { id: 'trash' },
     title: 'Access & trash',
     text: 'A successful run lets you ACCESS the cards there. Many corp cards show a trash cost — pay it to bin them. Trash Adonis for 3 credits, or it pays the corp 9 more over the next turns.',
@@ -68,6 +73,11 @@ export const GUIDED_STEPS = [
     match: { ctx: 'runStep', promptIncludes: 'Viktor' }, allow: { id: 'continue' },
     title: 'All subroutines broken',
     text: 'Every subroutine is green in the run panel — the ice cannot hurt you now. Continue into the server and access the top card of R&D.',
+  },
+  {
+    match: { ctx: 'runStep', promptIncludes: 'Jack out' }, allow: { id: 'continue' },
+    title: 'One more chance to bail',
+    text: 'Every run offers a last jack-out right at the server, even after the ice is beaten. You already paid the cost to get here — continue in and access.',
   },
   {
     match: { ctx: 'actionMenu' }, allow: null,   // free play begins

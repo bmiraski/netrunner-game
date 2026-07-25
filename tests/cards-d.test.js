@@ -64,6 +64,7 @@ export default [
   forceIntoHand(g, 'Indexing');
   t.pick('credit'); // rebuild the action menu so it reflects the freshly-forced hand
   t.label('Play Indexing');
+  t.pick('continue'); // approach-server jack-out: continue
   t.pick('instead'); // use the replacement effect instead of breaching
   // reverse the 5-card order by always choosing the last remaining option
   for (let i = 0; i < 5; i++) {
@@ -100,9 +101,12 @@ export default [
   t.creditsOut('corp').discardFirst();
   forceIntoHand(g, 'Notoriety');
   t.prefix('run:rd'); // regenerates the action menu as a side effect
+  t.pick('continue'); // approach-server jack-out: continue
   assert.ok(!game.decision.options.some(o => o.label.includes('Play Notoriety'))); // missing hq + archives
   t.prefix('run:hq');
+  t.pick('continue'); // approach-server jack-out: continue
   t.prefix('run:archives');
+  t.pick('continue'); // approach-server jack-out: continue
   assert.ok(game.decision.options.some(o => o.label.includes('Play Notoriety'))); // all 3 centrals hit this turn
   const notId = Object.values(g.insts).find(i => cardOf(g, i.id).title === 'Notoriety').id;
   const before = g.state.runner.agendaPoints;
@@ -140,6 +144,7 @@ export default [
   forceIntoHand(g, 'The Maker’s Eye');
   t.pick('credit'); // rebuild the action menu so it reflects the freshly-forced hand
   t.label('Play The Maker’s Eye');
+  t.pick('continue'); // approach-server jack-out: continue
   assert.equal(lastEvent(game, 'access-count').data.n, 3); // 1 + 2 bonus
   assert.equal(lastEvent(game, 'run-end').data.successful, true);
 }],
@@ -257,6 +262,7 @@ export default [
   assert.ok(game.decision.options.some(o => o.id.startsWith('break:'))); // still str 4: no re-boost needed
   t.prefix('break');
   t.pick('continue');
+  t.pick('continue'); // approach-server jack-out: continue
   assert.equal(lastEvent(game, 'run-end').data.successful, true); // both traces broken; tags never given
   assert.equal(g.state.runner.tags, 0);
 }],
@@ -371,6 +377,7 @@ export default [
     t.prefix('boost'); // str 0 -> 1, matches Ice Wall
     t.prefix('break'); // 1cr: break the ETR sub
     t.pick('continue');
+    t.pick('continue'); // approach-server jack-out: continue
     assert.equal(inst(g, crId).zone, 'runner-discard'); // no hosted virus counters to spend -> trashed
     assert.equal(lastEvent(game, 'run-end').data.successful, true);
   }
@@ -394,6 +401,7 @@ export default [
     t.prefix('boost');
     t.prefix('break');
     t.pick('continue');
+    t.pick('continue'); // approach-server jack-out: continue
     assert.equal(inst(g, crId).zone, 'rig-program'); // spent the virus counter instead of trashing itself
     assert.equal(inst(g, crId).counters.virus, 0);
   }

@@ -108,6 +108,7 @@ export default [
   g.state.runner.tags = 1;
   const handBefore = g.state.runner.hand.length;
   t.prefix('run:hq');
+  t.pick('continue'); // approach-server jack-out: continue
   assert.equal(g.state.runner.hand.length, handBefore - 2);
   assert.equal(lastEvent(game, 'damage').data.why, 'Dedicated Response Team');
 }],
@@ -277,6 +278,7 @@ export default [
   forceIntoHand(g, 'Punitive Counterstrike'); // before the corp's turn ends
   t.creditsOut('corp').discardFirst();
   t.prefix('run:remote1');
+  t.pick('continue'); // approach-server jack-out: continue
   t.creditsOut('runner');
   assert.equal(g.state.flags.lastRunnerTurn.stolenPoints, 3);
   const handBefore = g.state.runner.hand.length;
@@ -346,6 +348,7 @@ export default [
   for (const id of [...g.state.corp.hand]) if (id !== tgtbtId) moveCard(g, id, 'corp-deck');
   t.creditsOut('corp').discardFirst();
   t.prefix('run:hq');
+  t.pick('continue'); // approach-server jack-out: continue
   assert.equal(g.state.runner.tags, 1);
   assert.equal(g.state.runner.agendaPoints, 1);
 }],
@@ -359,6 +362,7 @@ export default [
   inst(g, gbId).advancement = 2;
   t.creditsOut('corp').discardFirst();
   t.prefix('run:remote1');
+  t.pick('continue'); // approach-server jack-out: continue
   t.pick('done'); // decline to rez (asset is 0cr, doesn't matter for access)
   t.label('Give 2 tag');
   assert.equal(g.state.runner.tags, 2);
@@ -378,6 +382,7 @@ export default [
   t.pick('continue'); // no breakers
   t.num(0); t.num(0); // trace 3 (base 3 >= link 0 -> succeeds)
   assert.equal(inst(g, drId).counters.power, 1);
+  t.pick('continue'); // approach-server jack-out: continue
   t.prefix('ability'); // corp spends the power counter for another tag at server-approach
   assert.equal(g.state.runner.tags, 2);
   assert.equal(inst(g, drId).counters.power, 0);
@@ -423,6 +428,7 @@ export default [
   t.pick('continue');
   const runnerCredsBefore = g.state.runner.credits;
   t.pick('pay');
+  t.pick('continue'); // approach-server jack-out: continue
   // -1 sub payment, +2 Gabriel (successful HQ run completes before next decision)
   assert.equal(g.state.runner.credits, runnerCredsBefore - 1 + 2);
   assert.equal(lastEvent(game, 'run-end').data.successful, true);
@@ -541,6 +547,7 @@ export default [
   t.creditsOut('corp').discardFirst();
   // runner now runs, then corp can play it on the turn after that
   t.prefix('run:hq');
+  t.pick('continue'); // approach-server jack-out: continue
   t.creditsOut('runner');
   assert.ok(game.decision.options.some(o => o.label.includes('Play SEA Source')));
   t.label('Play SEA Source');
@@ -553,11 +560,14 @@ export default [
   const g = game.g;
   const t = driver(game).keepHands();
   t.label('Install Priority Requisition').pick('t:new');
+  const prId = g.state.corp.servers.remote1.content[0];
   t.label('Install Red Herrings').label('In remote1');
   t.pick(game.decision.options.find(o => o.id.startsWith('rez')).id);
   t.creditsOut('corp').discardFirst();
   g.state.runner.credits = 10;
   t.prefix('run:remote1');
+  t.pick('continue'); // approach-server jack-out: continue
+  t.pick(`a:${prId}`); // runner-chosen access order: Priority Requisition first
   const credsBefore = g.state.runner.credits;
   t.pick('steal');
   assert.equal(g.state.runner.agendaPoints, 3);
@@ -575,6 +585,7 @@ export default [
   g.state.corp.credits = 0;
   g.state.runner.credits = 0;
   t.prefix('run:remote1');
+  t.pick('continue'); // approach-server jack-out: continue
   t.num(0); // corp cannot boost (0cr)
   t.num(0); // runner cannot boost (0cr) -> trace 5 vs link 0 succeeds
   assert.equal(g.state.runner.tags, 1);
@@ -594,6 +605,7 @@ export default [
   g.state.corp.credits = 0;
   g.state.runner.credits = 0;
   t.prefix('run:remote1');
+  t.pick('continue'); // approach-server jack-out: continue
   t.num(0);
   t.num(0);
   assert.equal(g.state.runner.tags, 0);

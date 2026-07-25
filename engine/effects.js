@@ -1,6 +1,6 @@
 // Shared rules effects: money, cards, damage, tags, traces, scoring, winning.
 // Functions that may need player decisions are generators (yield decisions).
-import { inst, cardOf, moveCard, handSize } from './state.js';
+import { inst, cardOf, moveCard, handSize, handSizeRaw } from './state.js';
 import { choice, opt, number } from './decisions.js';
 import { getScript } from '../cards/registry.js';
 import { poolsFor, poolTotal, collect, modSum } from './hooks.js';
@@ -163,7 +163,10 @@ export function* trace(g, base, ctx = '') {
   const rBoost = yield number('runner', `Trace strength ${ts} vs link ${r.baseLink + linkBonus(g)}: boost link? (1cr each)`, 0, rMax, { trace: true });
   pay(g, 'runner', rBoost, 'link boost', 'trace');
   const link = r.baseLink + linkBonus(g) + rBoost;
-  const success = ts >= link;
+  // Ties favor the Runner: trace succeeds only if strength strictly exceeds link
+  // (Rules Reference: "If the link strength is equal to or greater than the
+  // trace strength, then the trace is unsuccessful").
+  const success = ts > link;
   emit(g, 'trace-result', { ts, link, success, ctx });
   for (const h of collect(g, 'onTraceResolved')) {
     yield* h.fn(g, { success, instId: h.id, ctx });
@@ -260,6 +263,12 @@ export function purgeVirus(g) {
 
 export function* discardToHandSize(g, player) {
   const p = g.state[player];
+  // Flatline: maximum hand size below zero (brain damage) at end of turn —
+  // distinct from the "damage exceeds grip" flatline check in damage() above.
+  if (player === 'runner' && handSizeRaw(g, player) < 0) {
+    win(g, 'corp', 'flatline');
+    return;
+  }
   const max = handSize(g, player);
   while (p.hand.length > max) {
     const pick = yield choice(player, `Discard down to ${max}: choose a card`,

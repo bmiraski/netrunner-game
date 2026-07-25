@@ -67,6 +67,18 @@ function* startOfTurn(g, player) {
   }
 }
 
+// "When your turn ends..." conditionals (Rules Reference: fires for the
+// active player at the end of their own discard phase, before the turn passes).
+function* endOfTurn(g, player) {
+  const s = g.state;
+  for (const h of collect(g, 'onTurnEnd')) {
+    if (h.it.card.side !== player) continue;
+    if (h.it.card.side === 'corp' && !h.it.rezzed && h.it.card.type !== 'identity') continue;
+    yield* h.fn(g, { instId: h.id });
+    if (s.winner) return;
+  }
+}
+
 // ---------- CORP ----------
 function* corpTurn(g) {
   const s = g.state;
@@ -85,6 +97,9 @@ function* corpTurn(g) {
   if (s.winner) return;
   s.phase = 'corp-discard';
   yield* fx.discardToHandSize(g, 'corp');
+  if (s.winner) return;
+  yield* endOfTurn(g, 'corp');
+  if (s.winner) return;
   fx.emit(g, 'turn-end', { who: 'corp' });
 }
 
@@ -272,6 +287,7 @@ function* runnerTurn(g) {
   if (s.winner) return;
   s.phase = 'runner-discard';
   yield* fx.discardToHandSize(g, 'runner');
+  if (s.winner) return;
   // snapshot for corp cards that read "during the Runner's last turn"
   s.flags.lastRunnerTurn = {
     ranServers: s.flags.turn.runsMade ?? [],
@@ -279,6 +295,8 @@ function* runnerTurn(g) {
     stolenPoints: (s.flags.turn.stolen ?? [])
       .reduce((a, id) => a + (inst(g, id).card.agendaPoints ?? 0), 0),
   };
+  yield* endOfTurn(g, 'runner');
+  if (s.winner) return;
   fx.emit(g, 'turn-end', { who: 'runner' });
 }
 

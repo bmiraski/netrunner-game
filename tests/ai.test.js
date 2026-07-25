@@ -134,11 +134,14 @@ export default [
   ensureInHand(g, 'corp', 'Red Herrings');
   const t = driver(game).keepHands();
   t.label('Install Priority Requisition').pick('t:new');
+  const prId = g.state.corp.servers.remote1.content[0];
   t.label('Install Red Herrings').pick('t:remote1');
   t.prefix('rez:');                     // rez Red Herrings (free action, 1cr)
   t.creditsOut('corp').discardFirst();
   g.state.runner.credits = 10;
   t.prefix('run:remote1');
+  t.pick('continue');                   // approach-server jack-out: continue
+  t.pick(`a:${prId}`);                  // runner-chosen access order: Priority Requisition first
   const d = game.decision;
   assert.equal(d.runStep, 'steal-cost');
   assert.match(d.prompt, /Steal Priority Requisition/);
@@ -151,6 +154,7 @@ export default [
   t.creditsOut('corp').discardFirst();
   game.g.state.runner.credits = 10;
   t.prefix('run:rd');                   // top of R&D is a PAD Campaign
+  t.pick('continue');                   // approach-server jack-out: continue
   const d = game.decision;
   assert.equal(d.runStep, 'access-trash');
   const ai = runnerAI();

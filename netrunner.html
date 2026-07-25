@@ -4397,8 +4397,11 @@ button, select, input { font: inherit; }
     return n;
   }
   function handSize(g, player) {
-    let p = g.state[player], n = p.baseHandSize - (player === "runner" ? p.brainDamage : 0);
-    return Math.max(0, n);
+    return Math.max(0, handSizeRaw(g, player));
+  }
+  function handSizeRaw(g, player) {
+    let p = g.state[player];
+    return p.baseHandSize - (player === "runner" ? p.brainDamage : 0);
   }
   function newRemote(g) {
     let sid = `remote${++g.state.corp.remoteCounter}`;
@@ -4617,7 +4620,7 @@ button, select, input { font: inherit; }
     pay(g, "corp", cBoost, "trace boost", "trace");
     let ts = base + cBoost, rMax = r.credits + poolTotal(g, "runner", "trace"), rBoost = yield number("runner", `Trace strength ${ts} vs link ${r.baseLink + linkBonus(g)}: boost link? (1cr each)`, 0, rMax, { trace: !0 });
     pay(g, "runner", rBoost, "link boost", "trace");
-    let link = r.baseLink + linkBonus(g) + rBoost, success = ts >= link;
+    let link = r.baseLink + linkBonus(g) + rBoost, success = ts > link;
     emit(g, "trace-result", { ts, link, success, ctx });
     for (let h2 of collect(g, "onTraceResolved"))
       yield* h2.fn(g, { success, instId: h2.id, ctx });
@@ -4683,7 +4686,12 @@ button, select, input { font: inherit; }
     emit(g, "virus-purged", {});
   }
   function* discardToHandSize(g, player) {
-    let p = g.state[player], max = handSize(g, player);
+    let p = g.state[player];
+    if (player === "runner" && handSizeRaw(g, player) < 0) {
+      win(g, "corp", "flatline");
+      return;
+    }
+    let max = handSize(g, player);
     for (; p.hand.length > max; ) {
       let pick = yield choice(
         player,
@@ -4765,7 +4773,12 @@ button, select, input { font: inherit; }
       }
       s.run.icePassed++, emit(g, "ice-passed", { iceId, rezzed: ice.rezzed }), pos = Math.min(pos, server.ice.length);
     }
-    if (!s.run.ended && !s.winner && (emit(g, "approach-server", { server: sid }), yield* corpRunWindow(g, sid, null), !s.run.ended && !s.winner)) {
+    if (!s.run.ended && !s.winner && (emit(g, "approach-server", { server: sid }), s.run.cannotJackOut || (yield choice(
+      "runner",
+      "Jack out or continue the run?",
+      [opt("continue", "Continue the run"), opt("jack-out", "Jack out")],
+      { runStep: "jack-out" }
+    )) === "jack-out" && (s.run.ended = !0, emit(g, "jack-out", { server: sid })), !s.run.ended && !s.winner && (yield* corpRunWindow(g, sid, null)), !s.run.ended && !s.winner)) {
       mods.changeServerOnSuccess && (emit(g, "server-changed", { from: sid, to: mods.changeServerOnSuccess }), sid = mods.changeServerOnSuccess, s.run.server = sid), s.run.successful = !0, ((_b = s.flags.turn).successfulRuns ?? (_b.successfulRuns = [])).push(sid), emit(g, "run-successful", { server: sid });
       for (let h2 of collect(g, "onRunSuccessful"))
         if (yield* h2.fn(g, { server: sid, instId: h2.id }), s.winner) break;
@@ -4937,10 +4950,25 @@ button, select, input { font: inherit; }
     } else
       ids = [...s.corp.servers[sid].content];
     s.run?.restrictAccessTo != null && (ids = ids.filter((id) => id === s.run.restrictAccessTo)), s.run?.accessLimit != null && (ids = ids.slice(0, s.run.accessLimit)), emit(g, "access-count", { server: sid, n: ids.length });
-    for (let id of ids) {
+    let runnerOrders = sid === "archives" || !isCentral(sid), remaining = [...ids];
+    for (; remaining.length; ) {
       if (s.winner || s.run && s.run.endAccess) return;
-      yield* accessCard(g, id, sid);
+      let id = remaining[0];
+      if (runnerOrders && remaining.length > 1) {
+        let pick = yield choice(
+          "runner",
+          "Access which card next?",
+          remaining.map((rid) => opt(`a:${rid}`, accessOrderLabel(g, rid))),
+          { runStep: "access-order" }
+        );
+        id = Number(pick.split(":")[1]);
+      }
+      remaining.splice(remaining.indexOf(id), 1), yield* accessCard(g, id, sid);
     }
+  }
+  function accessOrderLabel(g, id) {
+    let it = inst(g, id);
+    return it.faceup || it.rezzed ? it.card.title : "Unrezzed/unknown card";
   }
   function* accessCard(g, id, sid) {
     let s = g.state, it = inst(g, id);
@@ -5059,12 +5087,18 @@ button, select, input { font: inherit; }
       if (h2.it.card.side === player && !(h2.it.card.side === "corp" && !h2.it.rezzed && h2.it.card.type !== "identity") && (yield* h2.fn(g, { instId: h2.id }), s.winner))
         return;
   }
+  function* endOfTurn(g, player) {
+    let s = g.state;
+    for (let h2 of collect(g, "onTurnEnd"))
+      if (h2.it.card.side === player && !(h2.it.card.side === "corp" && !h2.it.rezzed && h2.it.card.type !== "identity") && (yield* h2.fn(g, { instId: h2.id }), s.winner))
+        return;
+  }
   function* corpTurn(g) {
     let s = g.state;
     if (s.turn++, s.activePlayer = "corp", s.corp.clicks = 3, yield* startOfTurn(g, "corp"), !s.winner && (s.phase = "corp-draw", draw(g, "corp", 1), !s.winner)) {
       for (s.phase = "corp-action", yield* scoreWindow(g); s.corp.clicks > 0 && !s.winner; )
         yield* corpAction(g), yield* scoreWindow(g);
-      s.winner || (s.phase = "corp-discard", yield* discardToHandSize(g, "corp"), emit(g, "turn-end", { who: "corp" }));
+      s.winner || (s.phase = "corp-discard", yield* discardToHandSize(g, "corp"), !s.winner && (yield* endOfTurn(g, "corp"), !s.winner && emit(g, "turn-end", { who: "corp" })));
     }
   }
   function* scoreWindow(g) {
@@ -5137,6 +5171,7 @@ button, select, input { font: inherit; }
       case "rez":
         yield* rezFx(g, id);
         break;
+      // free action, no click
       case "cardact": {
         let entry = cardActions(g, "corp").find((e) => e.id === pick);
         yield* runCardAction(g, "corp", entry);
@@ -5205,11 +5240,11 @@ button, select, input { font: inherit; }
     let s = g.state;
     if (s.activePlayer = "runner", s.runner.clicks = 4, yield* startOfTurn(g, "runner"), !s.winner) {
       for (s.phase = "runner-action"; s.runner.clicks > 0 && !s.winner; ) yield* runnerAction(g);
-      s.winner || (s.phase = "runner-discard", yield* discardToHandSize(g, "runner"), s.flags.lastRunnerTurn = {
+      s.winner || (s.phase = "runner-discard", yield* discardToHandSize(g, "runner"), !s.winner && (s.flags.lastRunnerTurn = {
         ranServers: s.flags.turn.runsMade ?? [],
         successfulRuns: s.flags.turn.successfulRuns ?? [],
         stolenPoints: (s.flags.turn.stolen ?? []).reduce((a, id) => a + (inst(g, id).card.agendaPoints ?? 0), 0)
-      }, emit(g, "turn-end", { who: "runner" }));
+      }, yield* endOfTurn(g, "runner"), !s.winner && emit(g, "turn-end", { who: "runner" })));
     }
   }
   function* runnerAction(g) {
@@ -7756,6 +7791,12 @@ button, select, input { font: inherit; }
       text: "The corp built REMOTE 1 and rezzed Adonis Campaign there \u2014 it pays them 3 credits every turn. The server has NO ice protecting it. Running an undefended server is free money: click Run on remote1."
     },
     {
+      match: { ctx: "runStep", promptIncludes: "Jack out" },
+      allow: { id: "continue" },
+      title: "Jack out?",
+      text: "At the edge of any server \u2014 even one with no ice \u2014 you may jack out instead of finishing the run. Jacking out ends the run immediately with no access. Nothing here threatens you: continue."
+    },
+    {
       match: { ctx: "runStep", promptIncludes: "Adonis" },
       allow: { id: "trash" },
       title: "Access & trash",
@@ -7784,6 +7825,12 @@ button, select, input { font: inherit; }
       allow: { id: "continue" },
       title: "All subroutines broken",
       text: "Every subroutine is green in the run panel \u2014 the ice cannot hurt you now. Continue into the server and access the top card of R&D."
+    },
+    {
+      match: { ctx: "runStep", promptIncludes: "Jack out" },
+      allow: { id: "continue" },
+      title: "One more chance to bail",
+      text: "Every run offers a last jack-out right at the server, even after the ice is beaten. You already paid the cost to get here \u2014 continue in and access."
     },
     {
       match: { ctx: "actionMenu" },
@@ -7826,7 +7873,7 @@ button, select, input { font: inherit; }
         cardsJson,
         gameConfig(TUTORIAL_CORP_DECK, TUTORIAL_RUNNER_DECK, 11)
       ), this.ctl = new AIController(this.game, {
-        corp: new CorpAI({ level: "standard", seed: 11 * 7 + 1 })
+        corp: new CorpAI({ level: "standard", seed: 78 })
       }), this.stepIndex = 0, this.mismatch = null, this.shownEvents = /* @__PURE__ */ new Set(), this.logMark = 0;
     }
     get guided() {

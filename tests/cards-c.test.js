@@ -81,6 +81,7 @@ export default [
   const before = g.state.runner.credits;
   t.label('Play Demolition Run');
   t.label('Run R&D');
+  t.pick('continue'); // approach-server jack-out: continue
   t.label('Demolition Run'); // access ability offered
   assert.equal(lastEvent(game, 'card-trashed').data.title, 'Priority Requisition');
   assert.equal(g.state.runner.agendaPoints, 0); // trashed, not stolen
@@ -97,6 +98,7 @@ export default [
   forceIntoHand(g, 'Retrieval Run');
   const before = g.state.runner.credits;
   t.label('Play Retrieval Run');
+  t.pick('continue'); // approach-server jack-out: continue
   t.label('Install 1 program from the heap');
   t.label('Morning Star');
   assert.equal(inst(g, msId).zone, 'rig-program');
@@ -113,6 +115,7 @@ export default [
   const clicksBefore = g.state.runner.clicks;
   t.label('Play Singularity');
   t.pick('r:remote1');
+  t.pick('continue'); // approach-server jack-out: continue
   t.pick('done'); // decline to rez Adonis Campaign
   t.label('Trash all cards installed in the root');
   assert.equal(g.state.corp.servers.remote1.content.length, 0);
@@ -131,6 +134,7 @@ export default [
   const brainBefore = g.state.runner.brainDamage;
   t.label('Play Stimhack');
   t.pick('r:hq');
+  t.pick('continue'); // approach-server jack-out: continue
   t.pick('trash'); // trash Adonis Campaign (3cr), paid entirely from Stimhack's hosted pool
   assert.equal(lastEvent(game, 'card-trashed').data.title, 'Adonis Campaign');
   // real credits: 0 + 2 (Gabriel, first successful HQ run) - 0 (trash paid from hosted pool)
@@ -157,6 +161,7 @@ export default [
   t.prefix('rez');
   t.prefix('break');
   t.pick('continue');
+  t.pick('continue'); // approach-server jack-out: continue
   assert.equal(inst(g, cfId).counters.recurring, 0);
   const spends = game.log.filter(e => e.type === 'pool-credits-spent');
   assert.equal(spends[spends.length - 1].data.from, 'Cyberfeeder');
@@ -209,8 +214,10 @@ export default [
   t.label('Install Datasucker');
   const dsId = g.state.runner.rig.program[0];
   t.prefix('run:rd');
+  t.pick('continue'); // approach-server jack-out: continue
   assert.equal(inst(g, dsId).counters.virus, 1);
   t.prefix('run:remote1');
+  t.pick('continue'); // approach-server jack-out: continue
   t.pick('done'); // decline to rez Adonis Campaign
   assert.equal(inst(g, dsId).counters.virus, 1); // unchanged: remote isn't a central server
   t.pick('leave'); // decline the access-trash prompt
@@ -232,6 +239,7 @@ export default [
   t.prefix('break'); // break up to 2 subs for 2cr
   t.prefix('sub'); // choose which sub to break first
   t.pick('continue');
+  t.pick('continue'); // approach-server jack-out: continue
   assert.equal(lastEvent(game, 'run-end').data.successful, true); // both subs broken: click-loss and ETR never fire
   assert.equal(g.state.runner.clicks, clicksBefore - 1); // only the run click; no click lost
 }],
@@ -253,11 +261,13 @@ export default [
   for (const other of [...g.state.corp.hand]) if (other !== secondAc) moveCard(g, other, 'corp-deck');
   if (!g.state.corp.hand.includes(secondAc)) moveCard(g, secondAc, 'corp-hand');
   t.prefix('run:remote1');
+  t.pick('continue'); // approach-server jack-out: continue
   t.pick('done'); // decline to rez the installed Adonis Campaign
   t.label('Imp:'); // "Imp: spend a hosted virus counter to trash the accessed card"
   assert.equal(inst(g, impId).counters.virus, 1);
   assert.equal(lastEvent(game, 'card-trashed').data.title, 'Adonis Campaign');
   t.prefix('run:hq');
+  t.pick('continue'); // approach-server jack-out: continue
   // once-per-turn: Imp's ability must not be offered again this turn
   assert.ok(!game.decision.options.some(o => o.label.includes('Imp:')));
   t.pick('leave'); // decline the normal paid trash
@@ -273,8 +283,10 @@ export default [
   t.label('Install Hemorrhage');
   const hId = g.state.runner.rig.program[0];
   t.prefix('run:rd');
+  t.pick('continue'); // approach-server jack-out: continue
   assert.equal(inst(g, hId).counters.virus, 1);
   t.prefix('run:archives');
+  t.pick('continue'); // approach-server jack-out: continue
   assert.equal(inst(g, hId).counters.virus, 2);
   const clicksBefore = g.state.runner.clicks;
   t.label('Spend 2 hosted virus counters');
@@ -299,6 +311,7 @@ export default [
   const before = g.state.runner.credits;
   t.prefix('break');
   t.pick('continue');
+  t.pick('continue'); // approach-server jack-out: continue
   // -1 for the break, +2 Gabriel (first successful HQ run this turn)
   assert.equal(g.state.runner.credits, before - 1 + 2);
   assert.equal(lastEvent(game, 'run-end').data.successful, true); // ETR broken
@@ -351,6 +364,7 @@ export default [
   forceSoleHqCard(g, 'Adonis Campaign');
   g.state.runner.credits = 1; // 1 real + 2 pooled = exactly the 3cr trash cost
   t.prefix('run:hq');
+  t.pick('continue'); // approach-server jack-out: continue
   t.pick('trash');
   assert.equal(inst(g, scId).counters.recurring, 0);
   // 1 real - 1 real (rest of the 3cr trash cost, after 2cr from the pool) + 2 (Gabriel, first successful HQ run)
@@ -383,8 +397,10 @@ export default [
   t.creditsOut('corp').discardFirst();
   const before = g.state.runner.credits;
   t.prefix('run:hq');
+  t.pick('continue'); // approach-server jack-out: continue
   assert.equal(g.state.runner.credits, before + 2);
   t.prefix('run:hq'); // second HQ run this turn: no further bonus
+  t.pick('continue'); // approach-server jack-out: continue
   assert.equal(g.state.runner.credits, before + 2);
 }],
 
@@ -405,6 +421,7 @@ export default [
   t.prefix('rez');
   t.prefix('break'); // Morning Star breaks Ice Wall's ETR so the run succeeds
   t.pick('continue');
+  t.pick('continue'); // approach-server jack-out: continue
   assert.equal(lastEvent(game, 'run-end').data.successful, true);
   assert.ok(game.decision.options.some(o => o.label.includes('Play Emergency Shutdown')));
   const iceId = g.state.corp.servers.hq.ice[0];
@@ -456,6 +473,7 @@ export default [
   t.label('Play Inside Job');
   t.pick('r:hq');
   t.prefix('rez');
+  t.pick('continue'); // approach-server jack-out: continue
   assert.equal(lastEvent(game, 'ice-bypassed').data.title, 'Ice Wall');
   assert.equal(lastEvent(game, 'run-end').data.successful, true);
 }],
@@ -485,7 +503,9 @@ export default [
   assert.equal(memoryLimit(g), 5); // base 4 + 1
   const before = g.state.runner.credits;
   t.prefix('run:rd');
+  t.pick('continue'); // approach-server jack-out: continue (rd run)
   t.label('Run hq'); // Doppelgänger's follow-up run choice
+  t.pick('continue'); // approach-server jack-out: continue (follow-up hq run)
   const successfulServers = game.log.filter(e => e.type === 'run-successful').map(e => e.data.server);
   assert.deepEqual(successfulServers, ['rd', 'hq']);
   assert.equal(g.state.runner.credits, before + 2); // Gabriel: the follow-up run was on HQ
@@ -499,6 +519,7 @@ export default [
   g.state.runner.credits = 10;
   t.label('Install HQ Interface');
   t.prefix('run:hq');
+  t.pick('continue'); // approach-server jack-out: continue
   assert.equal(lastEvent(game, 'access-count').data.n, 2); // 1 + 1 bonus
 }],
 
@@ -514,6 +535,7 @@ export default [
   t.prefix('rez');
   t.prefix('break');
   t.pick('continue');
+  t.pick('continue'); // approach-server jack-out: continue
   assert.equal(lastEvent(game, 'run-end').data.successful, true);
 }],
 
@@ -553,6 +575,7 @@ export default [
   t.prefix('boost'); // str 3 -> 4, matches Hunter
   t.prefix('break'); // free
   t.pick('continue');
+  t.pick('continue'); // approach-server jack-out: continue
   assert.equal(inst(g, faerieId).zone, 'runner-discard');
   assert.equal(lastEvent(game, 'card-trashed').data.title, 'Faerie');
   assert.equal(lastEvent(game, 'run-end').data.successful, true);
@@ -573,6 +596,7 @@ export default [
   t.prefix('run:hq');
   t.prefix('rez');
   t.pick('bypass'); // 1cr per sub; Ice Wall has 1
+  t.pick('continue'); // approach-server jack-out: continue
   assert.equal(lastEvent(game, 'ice-bypassed').data.title, 'Ice Wall');
   assert.equal(lastEvent(game, 'run-end').data.successful, true);
 }],
@@ -587,6 +611,7 @@ export default [
   const phId = g.state.runner.rig.program[0];
   assert.equal(inst(g, phId).counters.virus ?? 0, 0);
   t.prefix('run:hq');
+  t.pick('continue'); // approach-server jack-out: continue
   assert.equal(inst(g, phId).counters.virus, 1);
 }],
 
@@ -599,6 +624,7 @@ export default [
   t.label('Install Sneakdoor Beta');
   const before = g.state.runner.credits;
   t.label('Run Archives');
+  t.pick('continue'); // approach-server jack-out: continue
   assert.equal(lastEvent(game, 'server-changed').data.to, 'hq');
   assert.equal(g.state.runner.credits, before + 2); // Gabriel: the redirected run counted as HQ
 }],
@@ -615,12 +641,14 @@ export default [
   assert.equal(inst(g, bjId).counters.credit, 8);
   const before = g.state.runner.credits;
   t.prefix('run:remote1');
+  t.pick('continue'); // approach-server jack-out: continue
   t.pick('done'); // decline to rez Adonis Campaign
   t.pick('yes'); // use Bank Job instead of breaching
   t.num(5);
   assert.equal(g.state.runner.credits, before + 5);
   assert.equal(inst(g, bjId).counters.credit, 3);
   t.prefix('run:remote1');
+  t.pick('continue'); // approach-server jack-out: continue
   t.pick('done');
   t.pick('yes');
   t.num(3); // take the remainder -> empties and self-trashes

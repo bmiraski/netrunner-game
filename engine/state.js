@@ -162,9 +162,13 @@ export function memoryLimit(g) {
   return n;
 }
 export function handSize(g, player) {
+  return Math.max(0, handSizeRaw(g, player));
+}
+// Unclamped max hand size (can go negative from brain damage) — used to detect
+// the "maximum hand size below zero at end of turn" flatline condition.
+export function handSizeRaw(g, player) {
   const p = g.state[player];
-  const n = p.baseHandSize - (player === 'runner' ? p.brainDamage : 0);
-  return Math.max(0, n);
+  return p.baseHandSize - (player === 'runner' ? p.brainDamage : 0);
 }
 export function newRemote(g) {
   const sid = `remote${++g.state.corp.remoteCounter}`;

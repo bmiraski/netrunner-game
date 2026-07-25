@@ -59,6 +59,7 @@ export default [
   // Wall of Static str 3, Ram base 1: boost twice, break the ETR sub
   t.label('+1 strength').label('+1 strength').label('break "End the run"');
   t.pick('continue');
+  t.pick('continue');                    // approach-server jack-out: continue
   assert.equal(lastEvent(game, 'run-end').data.successful, true);
   // access hit either Priority Requisition (steal) or Wall of Static (no trash cost)
   const stolen = game.state.runner.agendaPoints;
@@ -86,6 +87,7 @@ export default [
   t.label('Install Priority Requisition').pick('t:new');
   t.creditsOut('corp').discardFirst();
   t.prefix('run:remote1');
+  t.pick('continue');                    // approach-server jack-out: continue
   assert.equal(game.state.runner.agendaPoints, 3);
   assert.equal(lastEvent(game, 'run-end').data.successful, true);
 }],
@@ -95,6 +97,7 @@ export default [
   const t = driver(game).keepHands();
   t.creditsOut('corp').discardFirst();
   t.prefix('run:rd');
+  t.pick('continue');                    // approach-server jack-out: continue
   assert.equal(game.state.runner.agendaPoints, 3);
 }],
 
@@ -103,6 +106,7 @@ export default [
   const t = driver(game).keepHands();
   t.creditsOut('corp').discardFirst();
   t.prefix('run:rd');
+  t.pick('continue');                    // approach-server jack-out: continue
   t.prefix('trash');
   const pad = db.titled('PAD Campaign');
   // archives: 1 discarded (facedown) + 1 trashed via access (faceup)
@@ -140,6 +144,7 @@ export default [
   t.prefix('rez');
   // Ram str 1 vs Ice Wall str 2: one boost required before break appears
   t.label('+1 strength').label('break "End the run"').pick('continue');
+  t.pick('continue');                    // approach-server jack-out: continue
   assert.equal(lastEvent(game, 'run-end').data.successful, true);
 }],
 
