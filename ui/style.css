@@ -45,6 +45,29 @@ button, select, input { font: inherit; }
 .deck-desc { color: var(--dim); font-size: 13px; margin: 14px 2px; }
 .deck-desc b { color: var(--text); }
 
+/* ---------- auth screen (hosted pivot) ---------- */
+.auth-screen { max-width: 460px; margin: 12vh auto; padding: 0 24px; text-align: center; }
+.auth-screen h1 {
+  font-size: 44px; letter-spacing: 0.35em; margin: 0;
+  color: var(--accent); text-shadow: 0 0 18px rgba(53,224,200,.45);
+}
+.auth-box {
+  border: 1px solid var(--edge); border-radius: 6px; background: var(--panel);
+  padding: 18px 20px; margin-top: 24px; text-align: left;
+}
+.auth-lede { color: var(--dim); font-size: 13px; margin: 0 0 12px; }
+.auth-form { display: flex; gap: 8px; }
+.auth-form input {
+  flex: 1; height: 34px; background: var(--bg2); color: var(--text);
+  border: 1px solid var(--edge); border-radius: 4px; padding: 6px 8px;
+}
+.auth-status { color: var(--accent); font-size: 12px; margin-top: 10px; min-height: 1em; }
+.setup-footer {
+  display: flex; align-items: center; gap: 12px; margin-top: 18px;
+  padding-top: 14px; border-top: 1px dotted var(--edge);
+}
+.auth-whoami { color: var(--dim); font-size: 12px; flex: 1; }
+
 /* ---------- buttons ---------- */
 .btn {
   background: var(--bg2); color: var(--text);

@@ -1,9 +1,25 @@
 # Netrunner vs. Computer — Build Plan
 
-> **Status:** Phases 1–7 complete (2026-09-16). All 132 Revised Core cards scripted; heuristic Corp & Runner AIs (2 difficulty levels) + 7 precon decks; browser UI with setup screen, board, prompts, log, and a committed double-clickable `netrunner.html`; tutorial mode; rule-based post-game review; 245 passing tests incl. jsdom full-game click-throughs (`docs/ENGINE.md`, `docs/CARD_COVERAGE.md`, `docs/AI.md`, `docs/UI.md`, `docs/TUTORIAL.md`, `docs/ANALYSIS.md`). Code on GitHub: `bmiraski/netrunner-game`. Read `PROJECT_NOTES.md` for current state before starting work. Phase 7 delivered post-game feedback: `analysis/analyze.js` computes click-grind, economy, per-run cost/value, scoring timeline, and damage/endgame findings straight off the event log, surfaced via a "Review game" overlay after game-over. Next: Phase 8 (stats tracking).
+> **Status:** Phases 1–7 complete, Phase 8 in progress (2026-09-17) — **pivoted to hosted + accounts**, see below. All 132 Revised Core cards scripted; heuristic Corp & Runner AIs (2 difficulty levels) + 7 precon decks; browser UI with setup screen, board, prompts, log; tutorial mode; rule-based post-game review; invite-only magic-link sign-in with cloud-saved match history (Supabase); 248 passing tests (`docs/ENGINE.md`, `docs/CARD_COVERAGE.md`, `docs/AI.md`, `docs/UI.md`, `docs/TUTORIAL.md`, `docs/ANALYSIS.md`, `docs/HOSTING.md`). Code on GitHub: `bmiraski/netrunner-game`. Read `PROJECT_NOTES.md` for current state before starting work. Remaining on Phase 8: the human-only setup steps in `docs/HOSTING.md` (run the DB schema, invite people, deploy, point Supabase's redirect URL at the real host) haven't been done yet — the code is ready but unverified against the live project from this sandbox (no network route to Supabase here). Then Phase 9 (verification & polish).
+
+## Hosted pivot (2026-09-17)
+Originally scoped as a purely local, offline, single-file tool (see the
+platform decision below, as first written). Revised at the user's request to
+run online for a small invite-only group ("me + a few friends") with
+per-account cloud stats instead of `localStorage`. This supersedes the
+platform decision's "no server" clause and the original Phase 8 description's
+`localStorage`-only plan — see `docs/HOSTING.md` for the full architecture,
+setup steps, and the trade-off this introduces (magic-link sign-in needs the
+app served over http(s); it can no longer run from a double-clicked local
+file). The engine/AI/cards/UI/tutorial/analysis code is unaffected — this
+pivot only touches the account/persistence layer.
 
 ## Decisions (locked)
-- **Platform:** Browser app — single self-contained HTML/JS file. Double-click to play on Mac; no install, no server.
+- **Platform:** Browser app, single-page bundle. ~~Single self-contained
+  HTML/JS file, double-click to play, no install, no server~~ — superseded
+  2026-09-17: now served over http(s) with Supabase-backed accounts (see
+  Hosted pivot above). Still no custom backend server to write/run —
+  Supabase (BaaS) plus static hosting covers it.
 - **Card pool:** Full Revised Core Set (ADN49, ~250 unique cards).
 - **Visuals:** Styled text cards (faction-colored frames, full rules text). Architecture leaves a hook to swap in NetrunnerDB card images later.
 - **Decks:** Preconstructed decks per identity, tuned for AI play.
@@ -20,7 +36,8 @@ index.html (single deliverable, bundled from modular source)
 ├── ui/          board, hand, servers, run visualization, action prompts, game log
 ├── tutorial/    scripted guided game with step-by-step overlays
 ├── analysis/    post-game feedback from the full game log
-└── stats/       localStorage-backed match history + stats screens
+├── cloud/       Supabase client, auth, and stats (Hosted pivot — see docs/HOSTING.md)
+└── db/          schema.sql for the hosted `games` table + RLS
 ```
 
 ## Phases
@@ -50,7 +67,13 @@ A scripted first game (fixed decks, fixed draws) with overlay callouts teaching:
 Rule-based analysis of the event log: economy efficiency (floated clicks, wasted credits), missed scoring windows, run risk vs. reward, agenda-density awareness, unspent resources at loss, key turning points. Presented as a turn-annotated review screen after each game.
 
 ### 8. Stats tracking
-Every completed game recorded to localStorage: date, side, identity, opponent deck, result, score, turns, key metrics. Stats screen: win rate over time, by side and faction, trend charts, streaks. JSON export/import so history survives browser data resets.
+~~Every completed game recorded to localStorage~~ — superseded by the Hosted
+pivot (2026-09-17): every completed game recorded to Supabase (`cloud/stats.js`,
+`db/schema.sql`), keyed to the signed-in account instead of the browser, so
+history follows the person rather than the device. Stats screen ("My stats",
+`ui/statspanel.js`): win rate, past games with side/decks/result/turns.
+JSON export/import (not yet built) is a smaller nice-to-have now that the
+data already lives in a real database rather than being the only copy.
 
 ### 9. Verification & polish
 Engine test suite against Rules Reference scenarios, scripted full-game playthroughs (AI vs. AI soak tests), card-by-card behavior checks against printed text, performance pass, then bundle to the single `netrunner.html` deliverable.

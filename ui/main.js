@@ -14,6 +14,9 @@ import { render } from './render.js';
 import { cardPanelHtml, escapeHtml } from './cardtext.js';
 import { analyzeGame } from '../analysis/analyze.js';
 import { reviewHtml } from './reviewpanel.js';
+import { statsHtml } from './statspanel.js';
+import { onAuthChange, sendMagicLink, signOut } from '../cloud/auth.js';
+import { shapeGameRow, saveGame, fetchMyGames } from '../cloud/stats.js';
 
 async function loadCards() {
   if (window.__CARDS__) return window.__CARDS__;           // bundled build
@@ -45,6 +48,7 @@ const app = {
   els: {}, optionMap: { byInst: new Map(), byServer: new Map() },
   lastConfig: null,
   tutorial: null, eventCallouts: [], hintText: null,
+  user: null,                // signed-in Supabase user, or null (cloud/auth.js)
 
   // tutorial helpers (no-ops outside tutorial mode)
   allowedId() {
@@ -57,12 +61,35 @@ const app = {
   showHint() {
     const hint = hintFor(this.game);
     this.hintText = hint ? hint.text : 'No decision pending.';
+    this.repaint();
+  },
+  // every render() call site routes through here so a completed game gets
+  // saved exactly once, regardless of which path (click, AI pump tick,
+  // watch-mode step) produced the final decision.
+  repaint() {
     render(this);
+    this.maybeSaveGame();
+  },
+  maybeSaveGame() {
+    if (!this.game || this._saved || !this.game.state.winner || !this.user) return;
+    this._saved = true;
+    const report = analyzeGame(this.game);
+    const cfg = this.lastConfig ?? {};
+    const row = shapeGameRow(report, {
+      userId: this.user.id,
+      side: cfg.tutorial ? 'runner' : cfg.side,
+      corpDeck: cfg.tutorial ? 'tutorial' : cfg.corpDeck,
+      runnerDeck: cfg.tutorial ? 'tutorial' : cfg.runnerDeck,
+    });
+    saveGame(row).then(({ error }) => {
+      if (error) console.error('save game to Supabase failed:', error.message ?? error);
+    });
   },
 
   // ---- game flow ----
   start(cfg) {
     this.lastConfig = cfg;
+    this._saved = false;
     this.tutorial = null; this.eventCallouts = []; this.hintText = null;
     const seed = cfg.seed;
     this.game = new Game(this.cardsJson, gameConfig(cfg.corpDeck, cfg.runnerDeck, seed));
@@ -78,12 +105,13 @@ const app = {
     this.els.inspector.innerHTML =
       '<div class="inspector-head">CARD DETAILS</div><div class="inspector-empty">Hover or click any card — details appear here.</div>';
     this._shownCard = null;
-    render(this);
+    this.repaint();
     this.autoInspect();
     if (cfg.side !== 'watch') this.pump();
   },
   startTutorial() {
     this.lastConfig = { tutorial: true };
+    this._saved = false;
     this.tutorial = new TutorialController(this.cardsJson);
     this.eventCallouts = []; this.hintText = null;
     this.game = this.tutorial.game;
@@ -97,7 +125,7 @@ const app = {
     this.els.inspector.innerHTML =
       '<div class="inspector-head">CARD DETAILS</div><div class="inspector-empty">Hover or click any card — details appear here.</div>';
     this.drainTutorial();
-    render(this);
+    this.repaint();
     this.autoInspect();
     this.pump();
   },
@@ -115,7 +143,7 @@ const app = {
     if (this.tutorial && wasRunner) { this.tutorial.onAnswered(); this.hintText = null; }
     this.closePopover();
     this.drainTutorial();
-    render(this);
+    this.repaint();
     this.autoInspect();
     if (this.viewer !== 'all') this.pump();
   },
@@ -127,7 +155,7 @@ const app = {
     if (pace <= 0) {
       this.ctl.run();
       this.drainTutorial();
-      render(this);
+      this.repaint();
       this.autoInspect();
       return;
     }
@@ -136,7 +164,7 @@ const app = {
     const tick = () => {
       const progressed = !this.game.state.winner && this.ctl.step();
       this.drainTutorial();
-      render(this);
+      this.repaint();
       this.autoInspect();
       const d = this.game.decision;
       if (progressed && !this.game.state.winner && d && this.ctl.ais[d.player]) {
@@ -144,13 +172,13 @@ const app = {
         return;
       }
       this._pacing = false;
-      render(this);                              // repaint with prompt active
+      this.repaint();                              // repaint with prompt active
     };
     tick();
   },
   step(n) {                          // watch mode
     for (let i = 0; i < n; i++) if (this.game.state.winner || !this.ctl.step()) break;
-    render(this);
+    this.repaint();
     this.autoInspect();
   },
   stepTurn() {
@@ -160,7 +188,7 @@ const app = {
       if (g.state.winner || !this.ctl.step()) break;
       if (g.state.turn !== startTurn || g.state.activePlayer !== startPlayer) break;
     }
-    render(this);
+    this.repaint();
     this.autoInspect();
   },
   // show the most recently played/revealed card in the inspector (new events
@@ -194,6 +222,35 @@ const app = {
   closeReview() {
     this.els.review.style.display = 'none';
     this.els.review.innerHTML = '';
+  },
+
+  // ---- my stats (Phase 8, hosted) ----
+  async showStats() {
+    this.els.stats.innerHTML = statsHtml([]);
+    this.els.stats.style.display = 'flex';
+    this.els.stats.querySelector('.review-close').addEventListener('click', () => this.closeStats());
+    const { data, error } = await fetchMyGames();
+    this.els.stats.innerHTML = statsHtml(data, { error });
+    this.els.stats.querySelector('.review-close').addEventListener('click', () => this.closeStats());
+  },
+  closeStats() {
+    this.els.stats.style.display = 'none';
+    this.els.stats.innerHTML = '';
+  },
+
+  // ---- auth (cloud/auth.js) ----
+  enterApp(user) {
+    this.user = user;
+    $('#auth').style.display = 'none';
+    $('#setup').style.display = '';
+    $('#auth-whoami').textContent = user.email ?? '';
+  },
+  leaveApp() {
+    this.user = null;
+    $('#table').style.display = 'none';
+    $('#setup').style.display = 'none';
+    $('#auth').style.display = '';
+    $('#auth-status').textContent = '';
   },
 
   // ---- board interaction ----
@@ -281,14 +338,36 @@ function buildSetup() {
   });
 }
 
+function wireAuth() {
+  $('#auth-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = $('#auth-email').value.trim();
+    if (!email) return;
+    $('#auth-status').textContent = 'Sending…';
+    const { error } = await sendMagicLink(email);
+    $('#auth-status').textContent = error
+      ? `Couldn't send a link: ${error.message}`
+      : `Check ${email} for a login link.`;
+  });
+  $('#btn-signout').addEventListener('click', async () => {
+    await signOut();
+  });
+  onAuthChange((session) => {
+    if (session?.user) app.enterApp(session.user);
+    else app.leaveApp();
+  });
+}
+
 async function init() {
   app.cardsJson = await loadCards();
   registerAll(createDb(app.cardsJson));
   app.els = {
     corpZone: $('#corp-zone'), midZone: $('#mid-zone'), runnerZone: $('#runner-zone'),
     log: $('#log'), prompt: $('#prompt'), inspector: $('#inspector'), callout: $('#callout'),
-    review: $('#review'),
+    review: $('#review'), stats: $('#stats'),
   };
+  wireAuth();
+  $('#btn-stats').addEventListener('click', () => app.showStats());
   $('#btn-tutorial').addEventListener('click', () => app.startTutorial());
   document.body.addEventListener('click', () => app.closePopover());
   $('#btn-step1').addEventListener('click', () => app.step(1));
@@ -301,6 +380,7 @@ async function init() {
     if ($('#table').style.display === 'none') return;    // setup screen
     if (e.key === 'Escape') {
       if (app.els.review.style.display !== 'none') { app.closeReview(); return; }
+      if (app.els.stats.style.display !== 'none') { app.closeStats(); return; }
       app.closePopover(); return;
     }
     if (e.target.tagName === 'INPUT') {

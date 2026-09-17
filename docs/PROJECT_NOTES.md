@@ -123,12 +123,40 @@
     check; `tools/ui-smoke.js` clicks "Review game" → asserts the overlay
     opens with content → closes it, in every mode (runner/corp/watch/
     tutorial), against the BUILT bundle. Suite: **245 passing, 0 failing**.
-- Next: **Phase 8 — Stats tracking** (BUILD_PLAN): every completed game
-  recorded to localStorage (date, side, identity, opponent deck, result,
-  score, turns, key metrics), a stats screen (win rate over time, by side/
-  faction, streaks), JSON export/import. `analysis/analyze.js`'s report is a
-  natural per-game record to persist — consider reusing its shape (or a
-  slimmed summary of it) rather than inventing a second one.
+- **Hosted pivot + Phase 8 (Stats tracking): IN PROGRESS** — 2026-09-17.
+  User request: run online for a small invite-only group ("me + a few
+  friends") with per-account cloud stats instead of `localStorage`.
+  Architecture + full setup steps: `docs/HOSTING.md`.
+  - `cloud/supabase.js` (client — URL + public anon key, safe to ship;
+    RLS is the real gate), `cloud/auth.js` (passwordless magic-link
+    sign-in/out, session listener), `cloud/stats.js` (`shapeGameRow()` pure
+    + `saveGame()`/`fetchMyGames()`).
+  - `db/schema.sql`: the `games` table + Row Level Security (each account
+    sees only its own rows) — NOT YET RUN against the live project (that's
+    on the human-only checklist below).
+  - `ui/main.js`: `#auth` screen gates `#setup`/`#table` until a session
+    exists; every render call now routes through `app.repaint()`, which
+    also calls `app.maybeSaveGame()` — the first repaint after
+    `game.state.winner` saves one row built from Phase 7's `analyzeGame()`
+    report. `ui/statspanel.js`: "My stats" overlay (past games, win rate).
+  - Verification: `tests/cloud.test.js` (`shapeGameRow()`), `tests/ui.test.js`
+    gained a stats-panel render check, `tools/ui-smoke.js` now polyfills
+    `window.fetch` (jsdom has none) — but the actual Supabase network calls
+    are UNTESTED from here: this sandbox has no route to Supabase. Suite:
+    **248 passing, 0 failing**.
+  - **Trade-off:** magic-link sign-in needs an http(s) origin to redirect
+    back to — the double-click-a-local-file workflow no longer works for
+    sign-in. `netrunner.html` now needs serving (local dev server or real
+    hosting) rather than opening directly.
+  - **Remaining — human-only, can't be done from a sandbox session:**
+    (1) run `db/schema.sql` in the Supabase SQL Editor, (2) turn off public
+    signup in Supabase Auth settings, (3) set the Site URL / redirect
+    allow-list once a real hosting URL exists, (4) invite each friend by
+    email via the Supabase dashboard, (5) connect the GitHub repo to
+    Vercel/Netlify/Cloudflare Pages for hosting, (6) do the first real
+    sign-in + save-a-game smoke test in an actual browser. Full steps in
+    `docs/HOSTING.md`.
+- Then: **Phase 9 — Verification & polish** (BUILD_PLAN).
 
 ## GitHub (sync at the end of every step)
 - Repo: `bmiraski/netrunner-game` (main). Access token: `.git-token` file in
@@ -155,13 +183,17 @@
   stale copies. Sync whenever these two files change materially.
 
 ## Locked decisions
-- Browser app, single self-contained HTML deliverable (`netrunner.html`), runs offline on Mac
+- Browser app, single-page bundle (`netrunner.html`). ~~Runs offline on Mac~~
+  — superseded 2026-09-17 (Hosted pivot): now served over http(s) with
+  Supabase-backed accounts; see `docs/HOSTING.md`.
 - Full **Revised Core Set** (ADN49 / pack `core2`), 132 unique cards / 247 copies
 - Styled text cards now; real card images later via `imageUrl` field already on every card
 - Preconstructed decks (2–3 per side); no deck builder at launch
 - Rules basis: FFG Rules Reference v1.1 (PDF in project knowledge)
 - Post-game feedback is rule-based analysis of the event log (not AI-generated)
-- Stats in localStorage + JSON export/import
+- ~~Stats in localStorage + JSON export/import~~ — superseded 2026-09-17:
+  stats in Supabase (Postgres), per-account, invite-only sign-in. See
+  `docs/HOSTING.md`.
 
 ## File map (`netrunner/`)
 ```
@@ -183,19 +215,23 @@ docs/
   TUTORIAL.md         ← tutorial architecture (Phase 6): guided script, callouts, hints
   ANALYSIS.md         ← post-game analysis architecture (Phase 7): detectors,
                         findings, review overlay
+  HOSTING.md          ← Hosted pivot (Phase 8): Supabase setup, deploy, invites
 engine/               ← rules engine (rng, events, state, decisions, effects,
                         game, run, db) — see ENGINE.md
 cards/                ← registry.js + pilots.js + waves-a/b/c/d.js (132 cards)
 ai/                   ← view/base/corp/runner/controller/decks — see AI.md
-tests/                ← run-tests.js + 12 *.test.js files (245 tests)
+tests/                ← run-tests.js + 13 *.test.js files (248 tests)
 tools/                ← soak.js (AI-vs-AI matrix), bundle.js (esbuild ->
                         netrunner.html), ui-smoke.js (jsdom bundle playthrough)
 ui/                   ← browser UI (see docs/UI.md): index.html, main.js,
-                        render.js, cardtext.js, logtext.js, reviewpanel.js, style.css
+                        render.js, cardtext.js, logtext.js, reviewpanel.js,
+                        statspanel.js, style.css
 tutorial/             ← guided script + controller + hints — see TUTORIAL.md
 analysis/             ← analyze.js (rule-based post-game detectors) — see ANALYSIS.md
-netrunner.html        ← COMMITTED single-file build (double-click to play)
-stats/                ← empty, Phase 8
+cloud/                ← supabase.js, auth.js, stats.js — see HOSTING.md
+db/                   ← schema.sql (games table + RLS) — run in Supabase, see HOSTING.md
+netrunner.html        ← COMMITTED single-file build (now needs http(s) to
+                        sign in — see HOSTING.md; no longer double-click-only)
 ```
 
 ## Card data facts
@@ -222,22 +258,32 @@ stats/                ← empty, Phase 8
 - Write unit tests in `tests/` as engine features land, runnable via `node` in sandbox
 - Update the Status section of this file at the end of every working session
 
-## Phase 8 pointers (next session)
-- Stats tracking (BUILD_PLAN): every completed game recorded to
-  localStorage — date, side, identity, opponent deck, result, score, turns,
-  key metrics. `analysis/analyze.js`'s report (Phase 7) already computes
-  most of a per-game record; consider persisting a slimmed version of it
-  (or the whole thing) rather than deriving a second summary shape.
-- Stats screen: win rate over time, by side and by faction, trend charts,
-  streaks. JSON export/import so history survives browser data resets
-  (locked decision — no server, no accounts).
-- Where to hook the save: `game.state.winner` becoming truthy (same moment
-  the "Review game" button appears, `ui/render.js` `renderPrompt`) is the
-  natural point to also write the localStorage record — check it isn't
-  double-written on re-render.
+## Hosted pivot / Phase 8 pointers (next session)
+- The CODE side of the hosted pivot is done (see Status above) — what's left
+  is the human-only checklist in `docs/HOSTING.md` (run `db/schema.sql`,
+  lock down public signup, set the Supabase redirect URL, invite people,
+  deploy, then do the first real sign-in + save-a-game test in a browser).
+  Nothing else needs building until that checklist surfaces a problem.
+- If it does surface a problem: the likely failure points are (a) the
+  redirect URL not matching between Supabase settings and wherever it's
+  actually served from (magic link sends you back to a blank/error page),
+  or (b) RLS policy typos (`insert`/`select` silently return no rows/error
+  rather than throwing loudly — check the browser console, `saveGame`'s
+  error is logged there).
+- Still not built: JSON export/import for match history (was the
+  `localStorage`-era plan; less urgent now that the data lives in Postgres,
+  but still nice to have as a personal backup/portability option) and any
+  trend charts/streaks beyond the plain win-rate number in "My stats."
 - Rebuild + verify cycle: `npm run build` then `node tools/ui-smoke.js`
   (jsdom must be resolvable: `npm install jsdom`, or `JSDOM_DIR=...` if
-  installed elsewhere; esbuild likewise via `npm install` or `ESBUILD=...`).
-  Tests: `node tests/run-tests.js` (245 green); tutorial replay test breaks
-  loudly if engine/AI changes shift the seed-11 tutorial game — re-author
-  per docs/TUTORIAL.md.
+  installed elsewhere; esbuild likewise via `npm install` or `ESBUILD=...`;
+  note `npm install <pkg>` without `--no-save` prunes anything installed
+  with `--no-save` earlier in the same session, e.g. jsdom — reinstall it
+  after adding a real dependency). Tests: `node tests/run-tests.js`
+  (248 green); tutorial replay test breaks loudly if engine/AI changes shift
+  the seed-11 tutorial game — re-author per docs/TUTORIAL.md.
+- After the hosted pivot is verified live: **Phase 9 — Verification &
+  polish** (BUILD_PLAN) is the last phase — see the punch list of deferred
+  items called out in the Rules-audit and Phase 4/5 bullets above (three
+  partially-scripted cards, two open rules-engine gaps, AI balance
+  outliers, real card art).

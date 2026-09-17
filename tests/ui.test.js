@@ -9,8 +9,21 @@ import { markupToHtml, factionColor } from '../ui/cardtext.js';
 import { buildOptionMap } from '../ui/render.js';
 import { analyzeGame } from '../analysis/analyze.js';
 import { reviewHtml } from '../ui/reviewpanel.js';
+import { statsHtml } from '../ui/statspanel.js';
 
 export default [
+
+  ['stats panel renders empty, populated, and error states without throwing', () => {
+    assert.ok(statsHtml([]).includes('No games recorded'));
+    const rows = [
+      { played_at: '2026-09-16T12:00:00Z', side: 'runner', corp_deck: 'hb-core', runner_deck: 'gabe-core', winner: 'runner', reason: 'agendas', turns: 8 },
+      { played_at: '2026-09-15T12:00:00Z', side: 'corp', corp_deck: 'weyland-core', runner_deck: null, winner: 'corp', reason: 'flatline', turns: 5 },
+    ];
+    const html = statsHtml(rows);
+    assert.ok(!/undefined|\[object/.test(html), `bad interpolation: ${html}`);
+    assert.ok(html.includes('Win rate'));
+    assert.ok(statsHtml([], { error: new Error('boom') }).includes('boom'));
+  }],
 
   ['review panel renders without throwing or leaking undefined across full games', () => {
     for (const [corpDeck, runnerDeck, seed] of [

@@ -8,7 +8,20 @@
 </head>
 <body>
 
-<div id="setup" class="setup">
+<div id="auth" class="auth-screen">
+  <h1>NETRUNNER</h1>
+  <div class="setup-sub">Revised Core Set &middot; vs computer</div>
+  <div class="auth-box">
+    <p class="auth-lede">Invite-only. Enter the email your invite was sent to and we'll email you a login link — no password.</p>
+    <form id="auth-form" class="auth-form">
+      <input id="auth-email" type="email" placeholder="you@example.com" required>
+      <button type="submit" class="btn btn-primary">Send login link</button>
+    </form>
+    <div id="auth-status" class="auth-status"></div>
+  </div>
+</div>
+
+<div id="setup" class="setup" style="display:none">
   <h1>NETRUNNER</h1>
   <div class="setup-sub">Revised Core Set &middot; vs computer</div>
   <div class="setup-grid">
@@ -45,7 +58,14 @@
     <button id="btn-start" class="btn btn-primary btn-big">Jack in</button>
     <button id="btn-tutorial" class="btn btn-big btn-tutorial">Tutorial — learn to play</button>
   </div>
+  <div class="setup-footer">
+    <button id="btn-stats" class="btn">My stats</button>
+    <span id="auth-whoami" class="auth-whoami"></span>
+    <button id="btn-signout" class="btn">Sign out</button>
+  </div>
 </div>
+
+<div id="stats" class="review-overlay" style="display:none"></div>
 
 <div id="table" style="display:none">
   <div class="layout">
