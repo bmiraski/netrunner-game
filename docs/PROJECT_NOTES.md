@@ -233,7 +233,34 @@
     performance pass, and real card art (`imageUrl`) — explicitly deferred
     by Ben pending a separate assessment of what's needed to expand the
     card pool into future NetrunnerDB expansions (requested alongside this
-    Phase 9 work; not yet produced as of this entry).
+    Phase 9 work).
+  - **Expansion-inputs assessment: DONE (2026-09-18)** — `docs/EXPANSION_ASSESSMENT.md`.
+    Researched the current NetrunnerDB/Null Signal Games landscape (classic
+    FFG-era ~1,700–2,000 cards across ~20 packs; NSG era ~750 more cards
+    since 2021, System Gateway through Vantage Point, still growing;
+    Standard/Startup/Eternal formats + rotation + ban list). Key findings:
+    (1) the data pipeline needs more than a bigger input file —
+    NetrunnerDB's newer v3 API splits cards from printings and uses
+    numeric-ID classification/format/restriction fields, a materially
+    different shape than what `data/build_cards.py` consumes today; (2)
+    card `code`s are not guaranteed unique across the classic/NSG eras
+    (both number from `01001`), a real collision risk for this engine's
+    code-as-primary-key design; (3) new packs should be assumed *more*
+    engine-hook-dense per card than Revised Core, not less, per this
+    session's own Phase 9 experience; (4) staying Eternal with hand-curated
+    precons (no rotation/ban-list modeling) is the pragmatic recommendation
+    given the "me + a few friends" audience; (5) AI heuristic tuning
+    doesn't scale past a handful of hand-tuned matchups without either
+    staying small or investing in a more data-driven archetype layer; (6)
+    **card art is a separate, stricter licensing question from card
+    text** — NSG's own visual-assets policy explicitly excludes card art/
+    frames/backs from public reuse even under its own CC BY-ND license, so
+    real card art needs an explicit go/no-go from Ben before that work
+    starts, independent of the already-settled card-text/data assumption.
+    Presents 4 sized options (A: one more classic cycle, B: System Gateway,
+    C: full Standard pool, D: everything/Eternal) with a recommendation to
+    pilot on A or B. **Awaiting Ben's decision** on which pool to target
+    before any expansion implementation begins.
 - Then: remaining **Phase 9 — Verification & polish** items (BUILD_PLAN),
   and the card-art / expansion work once the assessment above is in hand.
 
