@@ -35,6 +35,7 @@ export function eventText(ev, g, viewer) {
     'runner-installed': () => `Runner installs ${d.title}.`,
     'install-failed': () => `Install failed (${d.why}).`,
     'hosted':         () => `${t(d.id)} hosted on ${t(d.on)}.`,
+    'card-returned-to-stack': () => `${d.title} is returned to the top of the stack.`,
     'card-rezzed':    () => `Corp rezzes ${d.title}.`,
     'ice-rezzed':     () => `Corp rezzes ${d.title}.`,
     'derezzed':       () => `${d.title} derezzed.`,

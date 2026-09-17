@@ -85,18 +85,11 @@ export function registerWavesD(db) {
   });
 
   // 20042 Test Run — search stack or heap for 1 program, install it ignoring
-  // all costs; shuffle the stack if it was searched.
-  // Deviation: the "when your turn ends, if that program has not been
-  // uninstalled, add it to the top of your stack" clause is NOT implemented.
-  // There is no delayed/end-of-turn trigger mechanism in the engine for an
-  // *event* (already in the heap by the time its effect would need to
-  // re-fire) — onTurnStart hooks only scan currently-installed sources
-  // (engine/hooks.js#hookSources), and there's no generic "schedule an
-  // effect for a future turn boundary" facility. The installed program
-  // simply stays installed permanently; this is a known engine-level gap
-  // (would need global delayed-trigger support), deferred per CARD_GUIDANCE.
-  // The `counters.testRun` marker is set on the installed instance purely as
-  // a documentation breadcrumb for a future implementation; nothing reads it.
+  // all costs; shuffle the stack if it was searched. At the end of this turn,
+  // if the program hasn't been uninstalled, it returns to the top of the
+  // stack (engine/game.js#endOfTurn's generic `pendingReturnToStack` check —
+  // Phase 9: this was previously deferred as a missing delayed-trigger
+  // facility; fixed by adding that generic one-shot marker/check).
   define(code('Test Run'), {
     *onPlay(g) {
       const zone = yield choice('runner', 'Test Run: search your stack or heap for a program?',
@@ -106,7 +99,7 @@ export function registerWavesD(db) {
       if (zone === 'deck') fx.shuffleDeck(g, 'runner');
       if (id != null) {
         yield* runnerInstall(g, id, { noClick: true, noCost: true });
-        inst(g, id).counters.testRun = 1;
+        inst(g, id).pendingReturnToStack = true;
       }
     },
   });

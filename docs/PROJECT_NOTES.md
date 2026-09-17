@@ -15,6 +15,8 @@
   Test Run return-to-stack (needs delayed-trigger facility),
   Archer rez requires scored agenda (not engine-gated — the Corp AI checks;
   the three partially-implemented cards are EXCLUDED from precon decks).
+  **Resolved in Phase 9 (2026-09-18)** — see the Phase 9 status entry below;
+  all three are now fully implemented and included in precon decks.
 - **Phase 4 (AI opponents): COMPLETE** — 2026-07-09. Architecture: docs/AI.md.
   - ai/: view.js (imperfect-info discipline), base.js (routing + fallback +
     difficulty LEVELS), corp.js, runner.js, controller.js (AIController +
@@ -102,8 +104,10 @@
     deck-outs.
   - Deferred by user choice (still open, not touched this pass): Corp
     non-ice rez window currently only offered at server approach (not also
-    for e.g. upgrades rezzed reactively mid-encounter); no generic Runner
-    encounter-side paid-ability window (beyond the boost/break menu).
+    for e.g. upgrades rezzed reactively mid-encounter). The other deferred
+    item, a generic Runner encounter-side paid-ability window (beyond the
+    boost/break menu), was **resolved in Phase 9 (2026-09-18)** — see below
+    (`script.encounterAbility` in engine/run.js).
 - **Phase 7 (Post-game feedback): COMPLETE** — 2026-09-16. Architecture:
   `docs/ANALYSIS.md`.
   - `analysis/analyze.js`: `analyzeGame(game)` — rule-based (no AI-generated
@@ -172,7 +176,66 @@
     clean (248 passing), committed and pushed. **Next step for Ben:** pull,
     redeploy (or just let Netlify auto-deploy off the push), then send a
     *fresh* invite from the Supabase dashboard and click it promptly.
-- Then: **Phase 9 — Verification & polish** (BUILD_PLAN).
+  - **Follow-up fix (2026-09-18):** the "My Stats" panel rendered visually
+    broken (head/body side-by-side, squeezed into a corner) — `#stats` was
+    missing `flex-direction: column`. Fixed in CSS; Ben confirmed it looks
+    right. Committed as `13ea55e`.
+- **Phase 9 (deferred cards + AI tuning): IN PROGRESS** — 2026-09-18. User
+  request: finish the 3 previously-deferred cards and tune the two
+  known-bad AI matchups, before starting card-art work.
+  - **Datasucker 20009 (counter spending)** — fully implemented via a new
+    generic hook, `script.encounterAbility` (engine/run.js), analogous to
+    the corp's existing `runWindowAbility`: lets a runner card register a
+    paid ability offered during ice encounter (alongside boost/break). Also
+    required `iceStrength()` to read the already-generic per-instance
+    `encounterStr` field (it didn't before) so spending a counter actually
+    lowers the ice's strength for that encounter.
+  - **Pheromones 20031 (pool spending)** — fully implemented at the engine
+    level: `'hq-run'` is now a CONTEXT purpose in `poolsFor()`
+    (engine/hooks.js) that matches ANY runner payment made while the
+    in-progress run's server is HQ, rather than requiring a specific
+    payment-type call site. No card-script changes were needed.
+  - **Test Run 20042 (return-to-stack)** — fully implemented via a new
+    generic one-shot delayed-trigger pattern: a per-instance
+    `pendingReturnToStack` boolean (engine/state.js), set on install,
+    scanned once at `endOfTurn` (engine/game.js) and resolved by moving the
+    card to the top of the runner's stack if it's still installed.
+  - All three cards re-added to their native-faction precon decks
+    (`ai/decks.js`) with no net influence/size change: Reina gains
+    Datasucker (Crypsis 2→0), Gabe gains Pheromones (Crypsis 2→1), Chaos
+    Theory gains Test Run (Crypsis 1→0, Rabbit Hole 2→1). All verified
+    deck-legal; `tests/decks.test.js`'s `BANNED` list is now empty.
+  - **AI tuning — Jinteki PE vs Gabriel: FIXED.** Was ~8-2 corp
+    (77.5%/22.5%, flatline-heavy). Root cause: Gabriel's own +2cr
+    first-successful-HQ-run bonus pulls him into repeated HQ runs even as
+    PE punishes every access. Fixed with two Gabriel+PE-scoped changes in
+    `ai/runner.js` (an overextension penalty in `runEV()`, a higher
+    draw-priority baseline in `action()` at thin grip) — scoping to
+    Gabriel specifically (not "any runner vs PE") was essential; two
+    earlier unscoped attempts overcorrected and collateral-damaged the
+    otherwise-healthy jinteki-vs-reina/ct matchups. Final soak numbers:
+    jinteki-vs-gabe ~19/21, jinteki-vs-reina ~19/21, jinteki-vs-ct ~18/22 —
+    all in the game's normal variance. Full writeup: `docs/AI.md`.
+  - **AI tuning — Weyland vs Reina: investigated, not fixed.** Still skews
+    runner (~42.5%/57.5%). Root cause found (most Weyland barriers are ≤5
+    strength regardless of rez timing, so Morning Star trivializes them
+    either way — only Ice Wall is advanceable among the vulnerable pieces,
+    and reaching strength 6 costs 5 clicks). A targeted fix was tried,
+    measured as not improving the matchup, and reverted rather than shipped
+    unproven; `ai/corp.js` has zero net diff. Left open for a future
+    session with the diagnosis preserved in `docs/AI.md`.
+  - Test suite: **252 passing** (added Datasucker + 2 Pheromones tests to
+    `tests/cards-c.test.js`, replaced the old weak Test Run test with 2 new
+    ones in `tests/cards-d.test.js`).
+  - Docs updated: `docs/CARD_COVERAGE.md` (all three rows), `docs/AI.md`
+    (tuning list), this file, `BUILD_PLAN.md`.
+  - **Remaining Phase 9 scope** (per BUILD_PLAN's phase 9 description):
+    performance pass, and real card art (`imageUrl`) — explicitly deferred
+    by Ben pending a separate assessment of what's needed to expand the
+    card pool into future NetrunnerDB expansions (requested alongside this
+    Phase 9 work; not yet produced as of this entry).
+- Then: remaining **Phase 9 — Verification & polish** items (BUILD_PLAN),
+  and the card-art / expansion work once the assessment above is in hand.
 
 ## GitHub (sync at the end of every step)
 - Repo: `bmiraski/netrunner-game` (main). Access token: `.git-token` file in

@@ -62,8 +62,16 @@ export function poolsFor(g, player, purpose) {
     if (s.it.card.side !== player) continue;
     const r = s.script.recurring;
     const purposes = typeof r.purposes === 'function' ? r.purposes(g, s.it) : r.purposes;
+    // 'hq-run' is a CONTEXT purpose, not a payment-type purpose like
+    // 'icebreaker'/'trace'/'trash': it matches ANY payment (any purpose, or
+    // none) made while the in-progress run is on HQ, mirroring how
+    // hostedCredits/bpCredits apply "regardless of purpose" during any run
+    // (see pay() below). Pheromones (20031) is the only card using it —
+    // "Use these credits during runs on HQ" isn't restricted to a payment
+    // TYPE, just to WHEN it's spent.
+    const hqRunMatch = purposes.includes('hq-run') && g.state.run?.server === 'hq';
     // restricted pools only apply when the payment declares a matching purpose
-    if (!purposes.includes(purpose)) continue;
+    if (!hqRunMatch && !purposes.includes(purpose)) continue;
     if ((s.it.counters.recurring ?? 0) > 0) pools.push(s.it);
   }
   return pools;

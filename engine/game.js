@@ -77,6 +77,21 @@ function* endOfTurn(g, player) {
     yield* h.fn(g, { instId: h.id });
     if (s.winner) return;
   }
+  // Generic one-shot delayed-trigger check (Test Run): a card can mark its
+  // own installed instance with `pendingReturnToStack = true` at install time
+  // instead of needing a script-level onTurnEnd hook (the fetched program's
+  // own script isn't Test Run's to modify). Checked once per turn, self-
+  // clearing, and a no-op if the card already left play (installedRunner()
+  // only lists what's currently installed).
+  if (player === 'runner') {
+    for (const id of installedRunner(g)) {
+      const it = inst(g, id);
+      if (!it.pendingReturnToStack) continue;
+      it.pendingReturnToStack = false;
+      moveCard(g, id, 'runner-deck', { position: 'top' });
+      fx.emit(g, 'card-returned-to-stack', { id, title: it.card.title });
+    }
+  }
 }
 
 // ---------- CORP ----------

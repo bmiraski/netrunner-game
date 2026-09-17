@@ -29,6 +29,10 @@ export function createState(db, cfg) {
       usedThisEncounter: false,
       hostId: null,        // hosting (Dinosaurus, The Personal Touch)
       installedTurn: null,
+      pendingReturnToStack: false, // Test Run: checked once at the owner's next
+                                    // end-of-turn (engine/game.js#endOfTurn);
+                                    // a generic one-shot delayed-trigger marker,
+                                    // not tied to any specific card's script.
     };
     insts[inst.id] = inst;
     return inst;
@@ -137,6 +141,7 @@ export function moveCard(g, id, toZone, opts = {}) {
   if (opts.uninstall !== false && /^(corp|runner)-/.test(toZone)) {
     it.rezzed = false; it.advancement = 0; it.counters = {};
     it.encounterStr = 0; it.runStr = 0; it.brokenSubs = []; it.hostId = null;
+    it.pendingReturnToStack = false;
   }
   return it;
 }

@@ -105,7 +105,14 @@ export class RunnerAI extends BaseAI {
     }
 
     // --- draw / credit baselines ---
-    add('draw', r.hand.length <= 1 ? 55 : (r.hand.length <= 3 ? 30 : 8));
+    // Against Jinteki PE, a thin grip isn't just "less action economy" like
+    // it is elsewhere — it's a flatline risk from the very next agenda
+    // scored or stolen (either side). Gabriel specifically (see runEV's PE
+    // overextension comment) needs the extra nudge toward drawing back up
+    // instead of chasing HQ credits into a flatline (Phase 9 tuning).
+    const peGabe = this.corpIdentity(g).includes('Personal Evolution') && this.identityTitle(g).startsWith('Gabriel');
+    add('draw', peGabe && r.hand.length <= 2 ? 45 :
+      r.hand.length <= 1 ? 55 : (r.hand.length <= 3 ? 30 : 8));
     add('credit', r.credits < 5 ? 34 : 10);
 
     ranked.sort((a, b) => b.score - a.score);
@@ -180,6 +187,18 @@ export class RunnerAI extends BaseAI {
       if (value === 0) return null;   // empty remote
       // trap respect: Jinteki PE punishes facechecking with a thin grip
       if (this.corpIdentity(g).includes('Personal Evolution') && r.hand.length <= 2) value -= 50;
+    }
+
+    // PE overextension (Gabriel specifically): EVERY agenda scored or stolen
+    // deals 1 net damage (either side), and Gabriel's own +14 HQ bonus above
+    // otherwise makes repeated HQ runs look worth it right up to (and past)
+    // the point of flatlining — other runner identities don't have that
+    // built-in pull toward over-running HQ, so this stays scoped to Gabriel
+    // rather than penalizing every matchup against Jinteki PE (Phase 9
+    // tuning, docs/AI.md: "Jinteki PE vs Gabriel skews corp").
+    if (this.corpIdentity(g).includes('Personal Evolution') && this.identityTitle(g).startsWith('Gabriel')) {
+      if (r.hand.length <= 1) value -= 25;
+      else if (r.hand.length <= 2) value -= 12;
     }
 
     // repeated-run fatigue. R&D's top card only changes when the corp draws,

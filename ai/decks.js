@@ -6,8 +6,11 @@
 // faction plus neutrals. Copy counts respect a single Revised Core box
 // (min(quantity, deckLimit)) and every deck stays within 15 influence.
 //
-// Banned (incompletely implemented in this engine, never included here):
-// 20009 Datasucker, 20031 Pheromones, 20042 Test Run.
+// Phase 9: Datasucker (20009), Pheromones (20031), and Test Run (20042) were
+// previously excluded as incompletely implemented (see docs/CARD_COVERAGE.md
+// history) — now fixed and added to their native-faction decks below (0
+// influence cost each), swapped in for a Crypsis/Rabbit Hole copy apiece to
+// keep each deck at its identity's minimum size.
 
 export const DECKS = {
   corp: [
@@ -178,7 +181,7 @@ export const DECKS = {
         { code: '20014', qty: 2 }, // Morning Star
         { code: '20010', qty: 3 }, // Force of Nature
         { code: '20013', qty: 3 }, // Mimic
-        { code: '20058', qty: 2 }, // Crypsis
+        { code: '20009', qty: 2 }, // Datasucker (swapped in for Crypsis, Phase 9)
         { code: '20011', qty: 1 }, // Imp
         // Resources (13)
         { code: '20016', qty: 3 }, // Liberated Account
@@ -216,7 +219,8 @@ export const DECKS = {
         { code: '20028', qty: 3 }, // Faerie
         { code: '20029', qty: 1 }, // Femme Fatale
         { code: '20032', qty: 1 }, // Sneakdoor Beta
-        { code: '20058', qty: 2 }, // Crypsis
+        { code: '20031', qty: 1 }, // Pheromones (swapped in for a Crypsis copy, Phase 9)
+        { code: '20058', qty: 1 }, // Crypsis
         // Resources (9)
         { code: '20033', qty: 2 }, // Bank Job
         { code: '20059', qty: 3 }, // Armitage Codebusting
@@ -232,25 +236,25 @@ export const DECKS = {
       side: 'runner',
       description: 'Use the 40-card deck and 5 MU to assemble Battering Ram / Gordian Blade / Pipeline fast (Modded and Diesel accelerate), fund runs with Magnum Opus, and dig with The Maker’s Eye.',
       cards: [
-        // Events (14)
+        // Events (16)
         { code: '20056', qty: 3 }, // Sure Gamble
         { code: '20038', qty: 2 }, // Diesel
         { code: '20040', qty: 3 }, // Modded
         { code: '20043', qty: 1 }, // The Maker's Eye
         { code: '20055', qty: 2 }, // Infiltration
         { code: '20020', qty: 3 }, // Easy Mark (Criminal, 1 inf each)
-        // Hardware (8)
+        { code: '20042', qty: 2 }, // Test Run (swapped in for Crypsis + a Rabbit Hole copy, Phase 9)
+        // Hardware (7)
         { code: '20045', qty: 2 }, // Dinosaurus
         { code: '20057', qty: 3 }, // Dyson Mem Chip
         { code: '20047', qty: 1 }, // The Personal Touch
-        { code: '20046', qty: 2 }, // Rabbit Hole
-        // Programs (13)
+        { code: '20046', qty: 1 }, // Rabbit Hole
+        // Programs (12)
         { code: '20048', qty: 3 }, // Battering Ram
         { code: '20049', qty: 3 }, // Gordian Blade
         { code: '20051', qty: 3 }, // Pipeline
         { code: '20029', qty: 1 }, // Femme Fatale (Criminal, 1 inf)
         { code: '20050', qty: 2 }, // Magnum Opus
-        { code: '20058', qty: 1 }, // Crypsis
         // Resources (5)
         { code: '20059', qty: 3 }, // Armitage Codebusting
         { code: '20054', qty: 1 }, // Sacrificial Construct

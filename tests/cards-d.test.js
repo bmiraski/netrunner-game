@@ -115,7 +115,7 @@ export default [
   assert.equal(inst(g, notId).zone, 'runner-score');
 }],
 
-["Test Run: installs a program from the heap ignoring all costs (documented gap: no end-of-turn return-to-stack)", () => {
+["Test Run: installs a program from the heap ignoring all costs, then returns it to the top of the stack at end of turn", () => {
   const game = makeGame({ corp: filler(10), runner: [['Test Run', 1], ['Morning Star', 1], ...rFiller(8)] });
   const g = game.g;
   const t = driver(game).keepHands();
@@ -130,10 +130,32 @@ export default [
   t.label('Morning Star');
   assert.equal(inst(g, msId).zone, 'rig-program');
   assert.equal(g.state.runner.credits, before - 3); // Test Run's own cost only; install was free
-  assert.equal(inst(g, msId).counters.testRun, 1); // breadcrumb marker; nothing reads it (documented deviation)
+  assert.equal(inst(g, msId).pendingReturnToStack, true);
   t.creditsOut('runner');
   t.creditsOut('corp').discardFirst(); // advance to runner turn 2
-  assert.equal(inst(g, msId).zone, 'rig-program'); // still installed: end-of-turn return-to-stack not implemented
+  assert.equal(inst(g, msId).zone, 'runner-deck'); // returned to the stack...
+  assert.equal(g.state.runner.deck[0], msId);      // ...specifically to the top
+  assert.equal(lastEvent(game, 'card-returned-to-stack').data.title, 'Morning Star');
+}],
+
+["Test Run: no return-to-stack if the program was uninstalled before the turn ends", () => {
+  const game = makeGame({ corp: filler(10), runner: [['Test Run', 1], ['Morning Star', 1], ...rFiller(8)] });
+  const g = game.g;
+  const t = driver(game).keepHands();
+  t.creditsOut('corp').discardFirst();
+  const msId = Object.values(g.insts).find(i => cardOf(g, i.id).title === 'Morning Star').id;
+  moveCard(g, msId, 'runner-discard'); // heap
+  forceIntoHand(g, 'Test Run');
+  t.pick('credit');
+  t.label('Play Test Run');
+  t.pick('discard');
+  t.label('Morning Star');
+  assert.equal(inst(g, msId).zone, 'rig-program');
+  fx.trash(g, msId, 'test'); // uninstalled before the turn ends
+  t.creditsOut('runner');
+  t.creditsOut('corp').discardFirst(); // advance to runner turn 2
+  assert.equal(inst(g, msId).zone, 'runner-discard'); // stays in the heap, not bounced to the stack
+  assert.equal(inst(g, msId).pendingReturnToStack, false);
 }],
 
 ['The Maker’s Eye: a successful R&D run accesses 3 cards total', () => {

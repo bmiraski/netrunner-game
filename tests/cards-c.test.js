@@ -223,6 +223,35 @@ export default [
   t.pick('leave'); // decline the access-trash prompt
 }],
 
+['Datasucker: hosted virus counter spends for -1 strength on the ice being encountered, until end of encounter', () => {
+  const game = makeGame({ corp: [['Enigma', 1], ...filler(9)], runner: [['Datasucker', 1], ...rFiller(9)] });
+  const g = game.g;
+  const t = driver(game).keepHands();
+  t.label('Install Enigma').label('Protecting hq');
+  t.creditsOut('corp').discardFirst();
+  g.state.runner.credits = 20;
+  t.label('Install Datasucker');
+  const dsId = g.state.runner.rig.program[0];
+  // build a counter via a successful R&D run first
+  t.prefix('run:rd');
+  t.pick('continue');
+  assert.equal(inst(g, dsId).counters.virus, 1);
+  t.creditsOut('runner').discardFirst();
+  t.creditsOut('corp').discardFirst();
+  g.state.runner.credits = 20;
+  const iceId = g.state.corp.servers.hq.ice[0];
+  t.prefix('run:hq');
+  t.prefix('rez');
+  assert.equal(iceStrength(g, iceId), 2); // Enigma's printed strength
+  t.prefix('eability'); // spend the hosted virus counter
+  assert.equal(inst(g, dsId).counters.virus, 0);
+  assert.equal(iceStrength(g, iceId), 1); // -1 for the rest of this encounter
+  t.pick('continue'); // no breaker installed: let the sub fire (End the run)
+  assert.equal(lastEvent(game, 'run-end').data.successful, false);
+  // next encounter (a fresh run) isn't affected — encounterStr already reset
+  assert.equal(iceStrength(g, iceId), 2);
+}],
+
 ['Force of Nature: boosts to match strength, then breaks up to 2 code gate subs for 2cr', () => {
   const game = makeGame({ corp: [['Enigma', 1], ...filler(9)], runner: [['Force of Nature', 1], ...rFiller(9)] });
   const g = game.g;
@@ -601,7 +630,7 @@ export default [
   assert.equal(lastEvent(game, 'run-end').data.successful, true);
 }],
 
-['Pheromones: a successful run on HQ adds a virus counter (spending is a documented engine gap)', () => {
+['Pheromones: a successful run on HQ adds a virus counter', () => {
   const game = makeGame({ corp: filler(10), runner: [['Pheromones', 1], ...rFiller(9)] });
   const g = game.g;
   const t = driver(game).keepHands();
@@ -613,6 +642,74 @@ export default [
   t.prefix('run:hq');
   t.pick('continue'); // approach-server jack-out: continue
   assert.equal(inst(g, phId).counters.virus, 1);
+}],
+
+['Pheromones: recurring pool (refilled at turn start from hosted virus counters) pays ANY runner cost during a run on HQ', () => {
+  const game = makeGame({ corp: [['PAD Campaign', 1], ...filler(9)], runner: [['Pheromones', 1], ...rFiller(9)] });
+  const g = game.g;
+  const t = driver(game).keepHands();
+  const padId = Object.values(g.insts).find(i => cardOf(g, i.id).title === 'PAD Campaign').id;
+  const putPadInHand = () => {
+    for (const id of [...g.state.corp.hand]) moveCard(g, id, 'corp-deck');
+    moveCard(g, padId, 'corp-hand');
+  };
+  putPadInHand();
+  t.creditsOut('corp').discardFirst(); // corp turn 1 -> runner turn 1
+  g.state.runner.credits = 10;
+  t.label('Install Pheromones');
+  const phId = g.state.runner.rig.program[0];
+  assert.equal(inst(g, phId).counters.recurring ?? 0, 0); // installed mid-turn: no refill yet
+  t.prefix('run:hq');
+  t.pick('continue'); // approach-server jack-out: continue
+  t.pick('leave'); // decline to trash PAD Campaign this run
+  assert.equal(inst(g, phId).counters.virus, 1); // earned this turn...
+  t.creditsOut('runner').discardFirst(); // ...too late to spend it — end runner turn 1
+  putPadInHand();
+  t.creditsOut('corp').discardFirst(); // corp turn 2 -> runner turn 2 starts, refills recurring
+  assert.equal(inst(g, phId).counters.recurring, 1); // now spendable, from last turn's count
+  g.state.runner.credits = 10;
+  t.prefix('run:hq');
+  t.pick('continue'); // approach-server jack-out: continue
+  // captured AFTER the run succeeds (Gabriel Santiago's default-identity +2cr
+  // for a first HQ run each turn has already landed by now) and BEFORE the
+  // trash payment, so it isolates just the trash cost's own credit movement.
+  const before = g.state.runner.credits;
+  t.pick('trash'); // trash PAD Campaign (4cr): pool covers 1, real credits cover the other 3
+  assert.equal(inst(g, phId).counters.recurring, 0);
+  assert.equal(g.state.runner.credits, before - 3); // only 3 real credits spent, not 4
+  assert.equal(lastEvent(game, 'pool-credits-spent').data.from, 'Pheromones');
+}],
+
+['Pheromones: recurring pool does NOT pay for a cost during a run on a different server', () => {
+  const game = makeGame({ corp: [['PAD Campaign', 1], ...filler(9)], runner: [['Pheromones', 1], ...rFiller(9)] });
+  const g = game.g;
+  const t = driver(game).keepHands();
+  const padId = Object.values(g.insts).find(i => cardOf(g, i.id).title === 'PAD Campaign').id;
+  t.creditsOut('corp').discardFirst(); // corp turn 1 -> runner turn 1
+  g.state.runner.credits = 10;
+  t.label('Install Pheromones');
+  const phId = g.state.runner.rig.program[0];
+  t.prefix('run:hq');
+  t.pick('continue'); // approach-server jack-out: continue (build a counter)
+  assert.equal(inst(g, phId).counters.virus, 1);
+  t.creditsOut('runner').discardFirst();
+  t.creditsOut('corp').discardFirst(); // runner turn 2 starts, refills recurring
+  assert.equal(inst(g, phId).counters.recurring, 1);
+  g.state.runner.credits = 10;
+  // put PAD Campaign on top of R&D so accessing it there is deterministic —
+  // moveCard (not a raw array splice) so it's correctly removed from
+  // whatever zone it's currently in (it may have been discarded to Archives
+  // during corp turn 1's discard-to-hand-size step) and its `.zone` field
+  // is updated to match; a raw splice would leave `.zone` stale and the
+  // access-trash check (`!it.zone.startsWith('corp-archives')`) would then
+  // wrongly skip the trash decision.
+  moveCard(g, padId, 'corp-deck', { position: 'top' });
+  const before = g.state.runner.credits;
+  t.prefix('run:rd'); // NOT HQ — Pheromones' pool shouldn't apply here
+  t.pick('continue'); // approach-server jack-out: continue
+  t.pick('trash'); // trash PAD Campaign (4cr) with real credits
+  assert.equal(inst(g, phId).counters.recurring, 1); // untouched
+  assert.equal(g.state.runner.credits, before - 4);
 }],
 
 ['Sneakdoor Beta: a successful Archives run redirects to HQ (Gabriel triggers)', () => {

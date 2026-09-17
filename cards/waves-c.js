@@ -126,20 +126,28 @@ export function registerWavesC(db) {
   });
 
   // 20009 Datasucker — successful run on a central: +1 virus counter.
-  // Deviation: the "hosted virus counter: -1 strength on the ice currently
-  // being encountered" spend ability is NOT implemented. The engine has no
-  // hook for a runner-side paid ability offered mid-encounter (the
-  // breaker-window loop in run.js only offers boost/break/clickbreak options
-  // sourced from `breaker` scripts) — there's no generic "runner encounter
-  // ability" hook analogous to corp's `runWindowAbility`. Counters accumulate
-  // and are directly observable/tested; spending them is deferred pending an
-  // encounter-side paid-ability hook (see docs/CARD_COVERAGE.md).
+  // Hosted virus counter: the rezzed ice currently being encountered gets -1
+  // strength until end of the encounter — implemented via `encounterAbility`
+  // (a generic runner encounter-side paid-ability hook, engine/run.js) and
+  // `it.encounterStr` (already a generic per-instance temp-strength field,
+  // cleared after every encounter; now read by `iceStrength()` too). Phase 9:
+  // previously deferred for lack of that hook; see docs/CARD_COVERAGE.md.
   define(code('Datasucker'), {
     *onRunSuccessful(g, { server, instId }) {
       if (!['hq', 'rd', 'archives'].includes(server)) return;
       const it = inst(g, instId);
       it.counters.virus = (it.counters.virus ?? 0) + 1;
       fx.emit(g, 'counters-added', { id: instId, n: 1, kind: 'virus', total: it.counters.virus });
+    },
+    encounterAbility: {
+      req(g, it, iceId) { return (it.counters.virus ?? 0) > 0 && inst(g, iceId).rezzed; },
+      label: (g, it) => `${it.card.title}: spend hosted virus counter (ice being encountered: -1 strength this encounter)`,
+      *effect(g, { instId, iceId }) {
+        const it = inst(g, instId);
+        it.counters.virus--;
+        fx.emit(g, 'counters-added', { id: instId, n: -1, kind: 'virus', total: it.counters.virus });
+        inst(g, iceId).encounterStr -= 1;
+      },
     },
   });
 
@@ -363,13 +371,12 @@ export function registerWavesC(db) {
 
   // 20031 Pheromones — X recurring credits (X = hosted virus counters) for
   // runs on HQ. Successful run on HQ: +1 virus counter.
-  // Deviation: the engine's recurring-pool purpose filter (poolsFor) only
-  // unlocks a pool when a `pay()` call declares a matching `purpose` string;
-  // no code path in game.js/run.js ever passes 'hq-run' (the purposes used
-  // are 'icebreaker'|'trace'|'trash'|'virus-install'|'remove-tag'), so this
-  // pool is defined faithfully but can never be spent through the current
-  // engine. Counter accumulation (the observable half) is implemented and
-  // tested; spending is deferred pending an 'hq-run' payment call site.
+  // Phase 9: previously deferred (no call site ever passed the 'hq-run'
+  // purpose). Fixed at the engine level instead of adding a call site:
+  // 'hq-run' is now a CONTEXT purpose in poolsFor() (engine/hooks.js) that
+  // matches ANY runner payment made while the in-progress run's server is
+  // 'hq' — matching the printed "use these credits during runs on HQ"
+  // (not restricted to one payment type), and requiring no changes here.
   define(code('Pheromones'), {
     recurring: { n: (g, it) => it.counters.virus ?? 0, purposes: ['hq-run'] },
     *onRunSuccessful(g, { server, instId }) {

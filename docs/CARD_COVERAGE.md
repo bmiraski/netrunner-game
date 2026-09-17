@@ -97,7 +97,7 @@ Simplifications MUST be noted here. Wave files: cards/waves-<a|b|c|d>.js
 | 20006 | Cyberfeeder | hardware | done | |
 | 20007 | Spinal Modem | hardware | done | |
 | 20008 | Darwin | program | done | |
-| 20009 | Datasucker | program | done | Deviation (documented in-code): the printed "hosted virus counter: rezzed ice being encountered has -1 strength" spend ability is **not implemented**. The engine has no generic "runner encounter-side paid ability" hook (the breaker-window loop in `run.js` only offers boost/break/clickbreak options sourced from a card's `breaker` definition) analogous to the corp's `runWindowAbility`. Counter accumulation on a successful central-server run (the observable half) is implemented and tested; spending the counters is deferred pending such a hook. |
+| 20009 | Datasucker | program | done | Phase 9: fully implemented, including the hosted-counter spend ability, via a new generic `encounterAbility` hook (engine/run.js) analogous to the corp's `runWindowAbility`. |
 | 20010 | Force of Nature | program | done | |
 | 20011 | Imp | program | done | |
 | 20012 | Hemorrhage | program | done | |
@@ -119,7 +119,7 @@ Simplifications MUST be noted here. Wave files: cards/waves-<a|b|c|d>.js
 | 20028 | Faerie | program | done | |
 | 20029 | Femme Fatale | program | done | |
 | 20030 | Peacock | program | done | |
-| 20031 | Pheromones | program | done | Deviation (documented in-code): the recurring pool is defined faithfully (`n` = hosted virus counters, `purposes:['hq-run']`), but no code path in `game.js`/`run.js` ever calls `pay()`/`canPay()` with the `'hq-run'` purpose (only `'icebreaker'`, `'trace'`, `'trash'`, `'virus-install'`, `'remove-tag'` are ever passed), so the pool can never actually be spent through the current engine. Counter accumulation on a successful HQ run (the observable half) is implemented and tested; spending is deferred pending an `'hq-run'` payment call site (e.g. wiring `doRun`'s HQ-specific costs, if any are added, to declare that purpose). |
+| 20031 | Pheromones | program | done | Phase 9: fully implemented. `'hq-run'` is now a CONTEXT purpose in `poolsFor()` (engine/hooks.js) matching ANY runner payment made while the in-progress run's server is HQ, rather than needing a specific payment-type call site — matches the printed "use these credits during runs on HQ" (not restricted to one cost type). |
 | 20032 | Sneakdoor Beta | program | done | The server-redirect happens before `onRunSuccessful` hooks fire (`run.js` reassigns `sid` and `s.run.server` first), so Gabriel Santiago's HQ trigger and HQ Interface's access bonus both correctly apply to a Sneakdoor-redirected run; verified in this batch's test. |
 | 20033 | Bank Job | resource | done | |
 | 20034 | Crash Space | resource | done | |
@@ -135,7 +135,7 @@ Simplifications MUST be noted here. Wave files: cards/waves-<a|b|c|d>.js
 | 20039 | Indexing | event | done | Reordering the top 5 of R&D is done via a direct splice on `g.state.corp.deck` (reordering within the same zone) rather than `moveCard`, since `moveCard` models zone-to-zone transfers, not in-place reordering. |
 | 20040 | Modded | event | done | |
 | 20041 | Notoriety | event | done | |
-| 20042 | Test Run | event | done | Deviation (documented in-code): the printed "when your turn ends, if that program has not been uninstalled, add it to the top of your stack" clause is **not implemented**. The engine has no generic "schedule an effect for a future turn boundary" facility (`onTurnStart` hooks only scan currently-installed sources); the installed program simply stays installed permanently. A `counters.testRun` marker is set on the installed instance as a documentation breadcrumb only — nothing reads it. This is a known, isolated engine-level gap; tested explicitly (the program remains installed into the following turn). |
+| 20042 | Test Run | event | done | Phase 9: fully implemented, including the printed "when your turn ends, if that program has not been uninstalled, add it to the top of your stack" clause. Uses a new generic one-shot delayed-trigger pattern: a per-instance `pendingReturnToStack` flag set on install, checked once at `endOfTurn` (engine/game.js), which returns the card to the top of the stack via `moveCard()` if it's still installed. |
 | 20043 | The Maker’s Eye | event | done | |
 | 20044 | Tinkering | event | done | |
 | 20045 | Dinosaurus | hardware | done | |

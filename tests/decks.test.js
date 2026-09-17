@@ -4,7 +4,7 @@ import { db, cardsJson } from './helpers.js';
 import { Game } from '../engine/game.js';
 import { DECKS, deckByKey, gameConfig } from '../ai/decks.js';
 
-const BANNED = ['20009', '20031', '20042']; // Datasucker, Pheromones, Test Run
+const BANNED = []; // Phase 9: Datasucker/Pheromones/Test Run are no longer excluded
 const ALL = [...DECKS.corp, ...DECKS.runner];
 const isNeutral = f => f.startsWith('neutral');
 

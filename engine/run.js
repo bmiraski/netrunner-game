@@ -18,7 +18,7 @@ export function iceStrength(g, iceId) {
   const it = inst(g, iceId);
   const own = getScript(it.code)?.strengthBonus?.(g, it) ?? 0;
   const ext = modSum(g, 'iceStrengthMod', it); // Ice Carver (encounter-aware)
-  return (it.card.strength ?? 0) + own + ext;
+  return (it.card.strength ?? 0) + own + ext + it.encounterStr; // Datasucker etc, cleared after encounter
 }
 export function breakerStrength(g, bId) {
   const it = inst(g, bId);
@@ -266,6 +266,14 @@ function* encounterIce(g, iceId) {
       const unbroken = activeSubs(g, ice).filter(x => !ice.brokenSubs.includes(x.index));
       if (unbroken.length) options.push(opt('clickbreak', `Spend [click] to break "${unbroken[0].label}"`));
     }
+    // generic runner encounter-side paid ability (Datasucker: spend a hosted
+    // virus counter for -1 ice strength this encounter) — analogous to the
+    // corp's runWindowAbility, but scoped to the current encounter/ice.
+    for (const eId of installedRunner(g)) {
+      const eIt = inst(g, eId);
+      const ea = getScript(eIt.code)?.encounterAbility;
+      if (ea && ea.req(g, eIt, iceId)) options.push(opt(`eability:${eId}`, ea.label(g, eIt, iceId)));
+    }
     if (options.length === 1 && activeSubs(g, ice).length === 0) break;
     const pick = yield choice('runner', `Encountering ${ice.card.title} (str ${iceStrength(g, iceId)})`, options, { runStep: 'encounter', iceId });
     if (pick === 'continue') break;
@@ -274,6 +282,11 @@ function* encounterIce(g, iceId) {
       const target = activeSubs(g, ice).find(x => !ice.brokenSubs.includes(x.index));
       ice.brokenSubs.push(target.index);
       emit(g, 'sub-broken', { iceId, sub: target.label, via: 'click' });
+      continue;
+    }
+    if (pick.startsWith('eability:')) {
+      const eId = Number(pick.split(':')[1]);
+      yield* getScript(inst(g, eId).code).encounterAbility.effect(g, { instId: eId, iceId });
       continue;
     }
     const [verb, bIdStr] = pick.split(':');

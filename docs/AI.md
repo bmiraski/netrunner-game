@@ -156,17 +156,51 @@ ctl.run();          // answers corp decisions, stops at the runner's turn
 
 7 decks, one per identity, single-core-box legal (tests/decks.test.js
 verifies size, influence, quantity caps, agenda points, in-faction agendas).
-Excluded as incompletely implemented in the engine (see CARD_COVERAGE.md):
-Datasucker 20009, Pheromones 20031, Test Run 20042. Archer IS included
-(AI-gated, above).
+Archer IS included (AI-gated, above). Phase 9 closed the three remaining
+engine gaps that had excluded cards from these decks — Datasucker 20009,
+Pheromones 20031, and Test Run 20042 are now fully implemented (see
+CARD_COVERAGE.md) and included in their native-faction precons (Reina:
+Datasucker; Gabe: Pheromones; Chaos Theory: Test Run), with no net
+influence/size change.
 
 ## Known limitations / Phase 9 tuning list
 
-- Jinteki PE vs Gabriel skews corp (~8-2, flatline-heavy): Gabe wants HQ
-  runs, PE punishes accesses. Candidate fixes: grip-size floor before
-  running vs PE, PE-aware access-trash of Snare-priced assets.
-- Weyland vs Reina skews runner (~3-7): Weyland's big ice is boostable prey
-  for Morning Star; corp could value advanceable-ice rez timing better.
+- **Jinteki PE vs Gabriel — FIXED.** Skewed corp ~8-2 (77.5% corp win rate
+  over a soak run), flatline-heavy: Gabe's own +2cr HQ-run bonus pulled him
+  into repeated HQ runs even as PE's damage-per-agenda made every one of
+  those runs riskier than for other runners. Root cause was Gabriel-specific
+  (his identity bonus, not "any runner vs PE" — other identities don't have
+  the same built-in pull toward over-running HQ). Fixed in `ai/runner.js`
+  with two changes, both scoped to `corpIdentity().includes('Personal
+  Evolution') && identityTitle().startsWith('Gabriel')`:
+  - `runEV()`: an overextension penalty (−25 at grip ≤1, −12 at grip ≤2) on
+    top of the existing PE facedown-remote penalty.
+  - `action()`: a higher draw-priority baseline at thin grip (45 at ≤2 cards)
+    so Gabriel draws back up instead of chasing HQ credits into a flatline.
+  Two earlier unscoped attempts (larger magnitudes, no Gabriel/PE gating)
+  overcorrected the target matchup past 50/50 the wrong way and collateral-
+  damaged the previously-healthy jinteki-vs-reina and jinteki-vs-ct
+  matchups; the final Gabriel-scoped version leaves those untouched.
+  Soak result (post-fix): jinteki-vs-gabe ~19/21 (47.5%/52.5%),
+  jinteki-vs-reina ~19/21, jinteki-vs-ct ~18/22 — all within the game's
+  normal matchup variance.
+- **Weyland vs Reina — investigated, not fixed.** Skews runner (~42.5%/
+  57.5%). Hypothesis was that Weyland could value advanceable-ice rez
+  timing better against Morning Star (flat 1cr-per-sub, strength-5
+  breaker). Root-caused instead: most of Weyland's barrier suite is ≤5
+  strength regardless of rez/advance timing, so Morning Star trivializes it
+  either way — only Ice Wall is advanceable among the vulnerable pieces,
+  and reaching strength 6 costs 5 clicks, which isn't a lever the AI can
+  realistically pull turn-to-turn. Tried a targeted ice-type-preference
+  reorder in `ai/corp.js` (prefer non-barrier ice vs Reina), scoped to
+  Weyland-vs-Reina only after an unscoped first attempt collateral-damaged
+  hb/jinteki-vs-reina; even correctly scoped, it showed no measurable
+  improvement to the target matchup (16/24 vs. the 17/23 baseline —
+  statistically indistinguishable, if anything slightly worse). Reverted
+  rather than ship a non-improving change; `ai/corp.js` has zero net diff
+  from before this investigation. Left open for a future session — the
+  diagnostic groundwork above (strength distribution, the Ice Wall
+  exception) should save re-deriving it from scratch.
 - Corp never intentionally over-advances traps beyond 3, and never
   double-installs upgrades; Runner ignores Sneakdoor-style redirect value in
   runEV (plays it fine when scripted mods fire, just doesn't seek it).

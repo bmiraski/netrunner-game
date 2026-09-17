@@ -4366,7 +4366,12 @@ button, select, input { font: inherit; }
         usedThisEncounter: !1,
         hostId: null,
         // hosting (Dinosaurus, The Personal Touch)
-        installedTurn: null
+        installedTurn: null,
+        pendingReturnToStack: !1
+        // Test Run: checked once at the owner's next
+        // end-of-turn (engine/game.js#endOfTurn);
+        // a generic one-shot delayed-trigger marker,
+        // not tied to any specific card's script.
       };
       return insts[inst2.id] = inst2, inst2;
     }
@@ -4475,7 +4480,7 @@ button, select, input { font: inherit; }
       let to = zoneList(g, toZone);
       opts.position === "top" ? to.unshift(id) : to.push(id);
     }
-    return opts.uninstall !== !1 && /^(corp|runner)-/.test(toZone) && (it.rezzed = !1, it.advancement = 0, it.counters = {}, it.encounterStr = 0, it.runStr = 0, it.brokenSubs = [], it.hostId = null), it;
+    return opts.uninstall !== !1 && /^(corp|runner)-/.test(toZone) && (it.rezzed = !1, it.advancement = 0, it.counters = {}, it.encounterStr = 0, it.runStr = 0, it.brokenSubs = [], it.hostId = null, it.pendingReturnToStack = !1), it;
   }
   function memoryUsed(g) {
     return g.state.runner.rig.program.reduce((s, id) => {
@@ -4593,8 +4598,8 @@ button, select, input { font: inherit; }
     let pools = [];
     for (let s of hookSources(g)) {
       if (!s.script.recurring || s.it.card.side !== player) continue;
-      let r = s.script.recurring;
-      (typeof r.purposes == "function" ? r.purposes(g, s.it) : r.purposes).includes(purpose) && (s.it.counters.recurring ?? 0) > 0 && pools.push(s.it);
+      let r = s.script.recurring, purposes = typeof r.purposes == "function" ? r.purposes(g, s.it) : r.purposes;
+      !(purposes.includes("hq-run") && g.state.run?.server === "hq") && !purposes.includes(purpose) || (s.it.counters.recurring ?? 0) > 0 && pools.push(s.it);
     }
     return pools;
   }
@@ -4812,7 +4817,7 @@ button, select, input { font: inherit; }
   // engine/run.js
   function iceStrength(g, iceId) {
     let it = inst(g, iceId), own = getScript(it.code)?.strengthBonus?.(g, it) ?? 0, ext = modSum(g, "iceStrengthMod", it);
-    return (it.card.strength ?? 0) + own + ext;
+    return (it.card.strength ?? 0) + own + ext + it.encounterStr;
   }
   function breakerStrength(g, bId) {
     let it = inst(g, bId), n = (it.card.strength ?? 0) + it.encounterStr + it.runStr;
@@ -4984,6 +4989,10 @@ button, select, input { font: inherit; }
         let unbroken = activeSubs(g, ice).filter((x) => !ice.brokenSubs.includes(x.index));
         unbroken.length && options.push(opt("clickbreak", `Spend [click] to break "${unbroken[0].label}"`));
       }
+      for (let eId of installedRunner(g)) {
+        let eIt = inst(g, eId), ea = getScript(eIt.code)?.encounterAbility;
+        ea && ea.req(g, eIt, iceId) && options.push(opt(`eability:${eId}`, ea.label(g, eIt, iceId)));
+      }
       if (options.length === 1 && activeSubs(g, ice).length === 0) break;
       let pick = yield choice("runner", `Encountering ${ice.card.title} (str ${iceStrength(g, iceId)})`, options, { runStep: "encounter", iceId });
       if (pick === "continue") break;
@@ -4991,6 +5000,11 @@ button, select, input { font: inherit; }
         s.runner.clicks--;
         let target = activeSubs(g, ice).find((x) => !ice.brokenSubs.includes(x.index));
         ice.brokenSubs.push(target.index), emit(g, "sub-broken", { iceId, sub: target.label, via: "click" });
+        continue;
+      }
+      if (pick.startsWith("eability:")) {
+        let eId = Number(pick.split(":")[1]);
+        yield* getScript(inst(g, eId).code).encounterAbility.effect(g, { instId: eId, iceId });
         continue;
       }
       let [verb, bIdStr] = pick.split(":"), bId = Number(bIdStr), bs = getScript(inst(g, bId).code).breaker;
@@ -5188,6 +5202,11 @@ button, select, input { font: inherit; }
     for (let h2 of collect(g, "onTurnEnd"))
       if (h2.it.card.side === player && !(h2.it.card.side === "corp" && !h2.it.rezzed && h2.it.card.type !== "identity") && (yield* h2.fn(g, { instId: h2.id }), s.winner))
         return;
+    if (player === "runner")
+      for (let id of installedRunner(g)) {
+        let it = inst(g, id);
+        it.pendingReturnToStack && (it.pendingReturnToStack = !1, moveCard(g, id, "runner-deck", { position: "top" }), emit(g, "card-returned-to-stack", { id, title: it.card.title }));
+      }
   }
   function* corpTurn(g) {
     let s = g.state;
@@ -6275,6 +6294,16 @@ button, select, input { font: inherit; }
         if (!["hq", "rd", "archives"].includes(server)) return;
         let it = inst(g, instId);
         it.counters.virus = (it.counters.virus ?? 0) + 1, emit(g, "counters-added", { id: instId, n: 1, kind: "virus", total: it.counters.virus });
+      },
+      encounterAbility: {
+        req(g, it, iceId) {
+          return (it.counters.virus ?? 0) > 0 && inst(g, iceId).rezzed;
+        },
+        label: (g, it) => `${it.card.title}: spend hosted virus counter (ice being encountered: -1 strength this encounter)`,
+        *effect(g, { instId, iceId }) {
+          let it = inst(g, instId);
+          it.counters.virus--, emit(g, "counters-added", { id: instId, n: -1, kind: "virus", total: it.counters.virus }), inst(g, iceId).encounterStr -= 1;
+        }
       }
     }), define(code("Force of Nature"), {
       breaker: {
@@ -6570,7 +6599,7 @@ button, select, input { font: inherit; }
           (c) => c.type === "program",
           `Test Run: search your ${zone === "deck" ? "stack" : "heap"} for a program`
         );
-        zone === "deck" && shuffleDeck(g, "runner"), id != null && (yield* runnerInstall(g, id, { noClick: !0, noCost: !0 }), inst(g, id).counters.testRun = 1);
+        zone === "deck" && shuffleDeck(g, "runner"), id != null && (yield* runnerInstall(g, id, { noClick: !0, noCost: !0 }), inst(g, id).pendingReturnToStack = !0);
       }
     }), define(code("The Maker's Eye"), {
       *onPlay(g) {
@@ -7189,7 +7218,8 @@ button, select, input { font: inherit; }
         }
         best && best.ev > 4 && add(`run:${best.sid}`, Math.min(90, 28 + best.ev * 0.9));
       }
-      return add("draw", r.hand.length <= 1 ? 55 : r.hand.length <= 3 ? 30 : 8), add("credit", r.credits < 5 ? 34 : 10), ranked.sort((a, b) => b.score - a.score), ranked.length ? this.maybeBlunder(ranked).id : this.fallback(g, d);
+      let peGabe = this.corpIdentity(g).includes("Personal Evolution") && this.identityTitle(g).startsWith("Gabriel");
+      return add("draw", peGabe && r.hand.length <= 2 ? 45 : r.hand.length <= 1 ? 55 : r.hand.length <= 3 ? 30 : 8), add("credit", r.credits < 5 ? 34 : 10), ranked.sort((a, b) => b.score - a.score), ranked.length ? this.maybeBlunder(ranked).id : this.fallback(g, d);
     }
     installValue(g, card, needTypes) {
       let script = getScript(card.code);
@@ -7241,6 +7271,7 @@ button, select, input { font: inherit; }
         if (value === 0) return null;
         this.corpIdentity(g).includes("Personal Evolution") && r.hand.length <= 2 && (value -= 50);
       }
+      this.corpIdentity(g).includes("Personal Evolution") && this.identityTitle(g).startsWith("Gabriel") && (r.hand.length <= 1 ? value -= 25 : r.hand.length <= 2 && (value -= 12));
       let runsThisTurn = (s.flags.turn.runsMade ?? []).filter((x) => x === sid).length;
       value -= runsThisTurn * (sid === "rd" ? 45 : sid === "hq" ? 20 : 25);
       let cost = 0, risk = 0, blocked = !1, rezBudget = s.corp.credits;
@@ -7671,8 +7702,8 @@ button, select, input { font: inherit; }
           // Force of Nature
           { code: "20013", qty: 3 },
           // Mimic
-          { code: "20058", qty: 2 },
-          // Crypsis
+          { code: "20009", qty: 2 },
+          // Datasucker (swapped in for Crypsis, Phase 9)
           { code: "20011", qty: 1 },
           // Imp
           // Resources (13)
@@ -7735,7 +7766,9 @@ button, select, input { font: inherit; }
           // Femme Fatale
           { code: "20032", qty: 1 },
           // Sneakdoor Beta
-          { code: "20058", qty: 2 },
+          { code: "20031", qty: 1 },
+          // Pheromones (swapped in for a Crypsis copy, Phase 9)
+          { code: "20058", qty: 1 },
           // Crypsis
           // Resources (9)
           { code: "20033", qty: 2 },
@@ -7758,7 +7791,7 @@ button, select, input { font: inherit; }
         side: "runner",
         description: "Use the 40-card deck and 5 MU to assemble Battering Ram / Gordian Blade / Pipeline fast (Modded and Diesel accelerate), fund runs with Magnum Opus, and dig with The Maker\u2019s Eye.",
         cards: [
-          // Events (14)
+          // Events (16)
           { code: "20056", qty: 3 },
           // Sure Gamble
           { code: "20038", qty: 2 },
@@ -7771,16 +7804,18 @@ button, select, input { font: inherit; }
           // Infiltration
           { code: "20020", qty: 3 },
           // Easy Mark (Criminal, 1 inf each)
-          // Hardware (8)
+          { code: "20042", qty: 2 },
+          // Test Run (swapped in for Crypsis + a Rabbit Hole copy, Phase 9)
+          // Hardware (7)
           { code: "20045", qty: 2 },
           // Dinosaurus
           { code: "20057", qty: 3 },
           // Dyson Mem Chip
           { code: "20047", qty: 1 },
           // The Personal Touch
-          { code: "20046", qty: 2 },
+          { code: "20046", qty: 1 },
           // Rabbit Hole
-          // Programs (13)
+          // Programs (12)
           { code: "20048", qty: 3 },
           // Battering Ram
           { code: "20049", qty: 3 },
@@ -7791,8 +7826,6 @@ button, select, input { font: inherit; }
           // Femme Fatale (Criminal, 1 inf)
           { code: "20050", qty: 2 },
           // Magnum Opus
-          { code: "20058", qty: 1 },
-          // Crypsis
           // Resources (5)
           { code: "20059", qty: 3 },
           // Armitage Codebusting
@@ -8100,6 +8133,7 @@ button, select, input { font: inherit; }
       "runner-installed": () => `Runner installs ${d.title}.`,
       "install-failed": () => `Install failed (${d.why}).`,
       hosted: () => `${t(d.id)} hosted on ${t(d.on)}.`,
+      "card-returned-to-stack": () => `${d.title} is returned to the top of the stack.`,
       "card-rezzed": () => `Corp rezzes ${d.title}.`,
       "ice-rezzed": () => `Corp rezzes ${d.title}.`,
       derezzed: () => `${d.title} derezzed.`,
