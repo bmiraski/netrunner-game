@@ -156,6 +156,22 @@
     Vercel/Netlify/Cloudflare Pages for hosting, (6) do the first real
     sign-in + save-a-game smoke test in an actual browser. Full steps in
     `docs/HOSTING.md`.
+  - **First live test (2026-09-16) hit a real bug, now fixed:** Ben deployed
+    to Netlify with Site URL set correctly, but the invite link redirected to
+    a Netlify 404 ("Page not found") carrying
+    `#error=access_denied&error_code=otp_expired&...` in the fragment. Root
+    cause: `tools/bundle.js` only ever wrote `netrunner.html`, and Netlify
+    (like most static hosts) serves `index.html` for the bare root URL with
+    no config — since Supabase's Site URL is just the bare origin, the
+    redirect landed on a path nothing was serving. Fixed by having the build
+    write `index.html` alongside `netrunner.html` (identical content); see
+    "Known issue" in `docs/HOSTING.md` for full detail, including the
+    separate (already-explained-by-the-error) otp_expired half of the
+    symptom — that invite link was also just spent/expired and needs a
+    resend regardless of the 404 fix. Rebuilt, full suite + ui-smoke re-run
+    clean (248 passing), committed and pushed. **Next step for Ben:** pull,
+    redeploy (or just let Netlify auto-deploy off the push), then send a
+    *fresh* invite from the Supabase dashboard and click it promptly.
 - Then: **Phase 9 — Verification & polish** (BUILD_PLAN).
 
 ## GitHub (sync at the end of every step)
@@ -232,6 +248,9 @@ cloud/                ← supabase.js, auth.js, stats.js — see HOSTING.md
 db/                   ← schema.sql (games table + RLS) — run in Supabase, see HOSTING.md
 netrunner.html        ← COMMITTED single-file build (now needs http(s) to
                         sign in — see HOSTING.md; no longer double-click-only)
+index.html            ← identical copy of netrunner.html, written by the same
+                        build step so static hosts serve the app at the bare
+                        root URL by default (see HOSTING.md "Known issue")
 ```
 
 ## Card data facts

@@ -1,6 +1,12 @@
 // Bundle the modular source into a single double-clickable netrunner.html.
 // Usage: node tools/bundle.js  (esbuild via node_modules, or set ESBUILD=/path/to/esbuild)
-// Output: netrunner.html at the repo root — cards.json, CSS, and all JS inlined.
+// Output: netrunner.html AND index.html at the repo root (identical content) —
+// cards.json, CSS, and all JS inlined. Both files are written because most
+// static hosts (Netlify, Vercel, GH Pages, etc.) serve `index.html` for the
+// bare root URL by default with zero config; without it, `/` 404s even
+// though `/netrunner.html` works fine — which is exactly what breaks a
+// Supabase magic-link/invite redirect, since Supabase's Site URL is
+// typically just the bare origin. See docs/HOSTING.md.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -44,6 +50,8 @@ html = html
   .replace('<script type="module" src="./main.js"></script>', () =>
     `<script>window.__CARDS__ = ${esc(cards)};</script>\n<script>\n${esc(js)}\n</script>`);
 
-const out = join(root, 'netrunner.html');
-writeFileSync(out, html);
-console.log(`wrote ${out} (${(html.length / 1024 / 1024).toFixed(2)} MB)`);
+const outNamed = join(root, 'netrunner.html');
+const outIndex = join(root, 'index.html');
+writeFileSync(outNamed, html);
+writeFileSync(outIndex, html);
+console.log(`wrote ${outNamed} and ${outIndex} (${(html.length / 1024 / 1024).toFixed(2)} MB each)`);

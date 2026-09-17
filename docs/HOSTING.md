@@ -59,6 +59,39 @@ either a local dev server for testing or the real hosted URL day to day.
    silently not arriving, that's the first thing to check — Authentication →
    Logs will show send attempts.)
 
+## Known issue (found + fixed 2026-09-16): root URL 404s on static hosts
+
+The first real invite-link test hit two stacked problems, both worth knowing
+about since either can recur:
+
+1. **`tools/bundle.js` only wrote `netrunner.html`, not `index.html`.**
+   Static hosts (Netlify, Vercel, GitHub Pages, ...) serve `index.html` for
+   the bare root URL (`https://your-site.netlify.app/`) with zero config —
+   but with no `index.html` in the published output, that path 404s even
+   though `/netrunner.html` works fine. Supabase's Site URL is normally just
+   the bare origin, so the invite/magic-link redirect lands on `/` and hits
+   that 404 — this is exactly the "Page not found" Netlify shows if you
+   click through past the auth redirect. **Fixed:** `npm run build` now
+   writes both `netrunner.html` and `index.html` (identical content) to the
+   repo root, so the bare root URL works out of the box on any static host.
+   Redeploy after pulling this fix so the live site picks up `index.html`.
+2. **Invite links are single-use and short-lived.** If an invite email sits
+   around, gets opened more than once, or passes through a link-scanning
+   proxy (some corporate mail security, and a few consumer webmail
+   "safe links" features, silently pre-visit links in incoming email to scan
+   them — which consumes a one-time auth token before the real click ever
+   happens), the link comes back with
+   `#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired`
+   in the URL fragment. This looks like a bug but usually just means the
+   token is spent — **the fix is to send a fresh invite**, not to debug the
+   old link. Practical tips: invite (or resend/re-invite) *after* the Site
+   URL is already pointed at the real hosting URL and the `index.html` fix
+   above is deployed, click it promptly, and if it keeps happening for the
+   same person, check Authentication → Logs in the Supabase dashboard for
+   repeated `verify` hits on the same token (a sign something is
+   pre-fetching the link) — try a different mail client/webmail for that
+   invite if so.
+
 ## Deploying
 
 Any static host works since this is still a static bundle — Vercel, Netlify,
@@ -68,10 +101,10 @@ to `main` once connected:
 1. Push this repo to GitHub (already the case — `bmiraski/netrunner-game`).
 2. On Vercel or Netlify: "New Project" / "Add new site" → import from GitHub
    → pick this repo.
-3. Build command: `npm run build`. Output: the repo root (or point it at
-   `netrunner.html` specifically — check the host's static-file conventions;
-   the simplest setup serves the whole repo root with `netrunner.html` as
-   the entry, or renames/copies it to `index.html` for the deploy).
+3. Build command: `npm run build`. Publish directory: the repo root. The
+   build now writes both `netrunner.html` and `index.html` (see "Known
+   issue" above), so the host's default root-serving behavior just works —
+   no manual rename/copy step needed.
 4. Once it's live, go back to Supabase (step 3 above) and set the Site
    URL/redirect allow-list to the real deployed URL.
 
