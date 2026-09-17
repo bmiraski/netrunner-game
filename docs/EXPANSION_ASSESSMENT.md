@@ -93,9 +93,9 @@ genuinely new engine facilities (a runner encounter-side paid-ability
 window, a context-scoped recurring-credit purpose, a one-shot delayed
 trigger) rather than reuse of existing hooks — and each of those turned out
 to be a small, clean, reusable addition once identified. Expect that pattern
-to repeat, roughly once every few cards, in any new pack: new subtypes （the
+to repeat, roughly once every few cards, in any new pack: new subtypes (the
 NSG era alone has introduced several, e.g. "Deva," "Constellation," "Mod,"
-and expanded "Trap"/"Directive" usage）, new timing windows, and mechanics
+and expanded "Trap"/"Directive" usage), new timing windows, and mechanics
 with no Revised Core analogue at all.
 
 The right process is the one already used for Phase 3 and reused for Phase
