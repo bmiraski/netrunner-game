@@ -294,7 +294,7 @@ button, select, input { font: inherit; }
   display: flex; align-items: center; justify-content: center;
 }
 .review-overlay > div, .review-overlay .review-head, .review-overlay .review-body { box-sizing: border-box; }
-#review { flex-direction: column; }
+#review, #stats { flex-direction: column; }
 .review-head {
   position: relative; width: min(880px, 92vw); margin: 4vh auto 0;
   background: var(--panel); border: 1px solid var(--gold); border-bottom: none;
