@@ -281,12 +281,23 @@
   the project folder is dead — ignore it (it's in .gitignore).
 - If the folder is empty in a fresh session, restore with the same setup then
   `G checkout origin/main -- .`
+- **2026-09-18 note:** in this session, the sandbox's git proxy denied pushes
+  to this repo outright ("not in this session's authorized repository set")
+  even with the working tree fully set up and prior commits/pushes visible in
+  history — a different failure mode than a missing/expired `.git-token`.
+  Local commits still succeeded; only the push was blocked. If this recurs,
+  it's a session-authorization issue to resolve on Ben's end (or by starting
+  a session with this repo pre-authorized), not a credential to regenerate.
 
-## Google Docs mirrors
-- BUILD_PLAN.md and PROJECT_NOTES.md are mirrored to the user's Google Drive
-  (they feed Claude project memory). Drive connector can only CREATE files,
-  not edit — so each sync creates a new doc with the same title; user deletes
-  stale copies. Sync whenever these two files change materially.
+## Google Docs mirrors — DISCONTINUED (2026-09-18)
+- Previously, BUILD_PLAN.md and PROJECT_NOTES.md were mirrored to the user's
+  Google Drive after each materially-changing session (Drive connector can
+  only CREATE files, not edit, so each sync created a new same-titled doc
+  and the user deleted stale copies by hand). **Ben ended this convention
+  2026-09-18: GitHub is the source of truth going forward, no more Drive
+  mirrors.** Two mirrors (BUILD_PLAN.md, PROJECT_NOTES.md) were already
+  created earlier in that same session before the request came in — Ben may
+  want to delete those manually, or ask a future session to do it.
 
 ## Locked decisions
 - Browser app, single-page bundle (`netrunner.html`). ~~Runs offline on Mac~~
