@@ -3,3 +3,5 @@ tests/_check*.mjs
 .DS_Store
 .git-token
 .git
+node_modules/
+package-lock.json

@@ -269,6 +269,57 @@ button, select, input { font: inherit; }
   box-shadow: 0 6px 24px rgba(0,0,0,.6);
 }
 
+/* ---------- post-game review (Phase 7) ---------- */
+.btn-review { border-color: var(--gold); color: var(--gold); }
+.btn-review:hover { box-shadow: 0 0 12px rgba(255,210,63,.3) inset; }
+.review-overlay {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(4,6,10,.82);
+  display: flex; align-items: center; justify-content: center;
+}
+.review-overlay > div, .review-overlay .review-head, .review-overlay .review-body { box-sizing: border-box; }
+#review { flex-direction: column; }
+.review-head {
+  position: relative; width: min(880px, 92vw); margin: 4vh auto 0;
+  background: var(--panel); border: 1px solid var(--gold); border-bottom: none;
+  border-radius: 8px 8px 0 0; padding: 14px 20px;
+}
+.review-title { color: var(--gold); letter-spacing: .25em; font-size: 13px; }
+.review-sub { color: var(--dim); margin-top: 4px; }
+.review-close { position: absolute; top: 12px; right: 16px; }
+.review-body {
+  width: min(880px, 92vw); max-height: 82vh; overflow: auto; margin: 0 auto 4vh;
+  background: var(--bg2); border: 1px solid var(--edge); border-top: none;
+  border-radius: 0 0 8px 8px; padding: 6px 20px 18px;
+}
+.rv-section { margin-top: 16px; }
+.rv-section h3 {
+  color: var(--accent); font-size: 12px; letter-spacing: .18em; text-transform: uppercase;
+  margin: 0 0 8px; border-bottom: 1px dotted var(--edge); padding-bottom: 4px;
+}
+.rv-empty { color: var(--dim); font-size: 13px; }
+.rv-finding {
+  display: flex; gap: 10px; padding: 5px 8px; border-radius: 4px; margin-bottom: 3px;
+  border-left: 3px solid var(--edge); background: rgba(255,255,255,.02);
+}
+.rv-finding .rv-turn { color: var(--dim); min-width: 32px; font-size: 11px; }
+.rv-good { border-left-color: var(--good); }
+.rv-good .rv-text { color: var(--good); }
+.rv-bad { border-left-color: var(--danger); }
+.rv-bad .rv-text { color: var(--danger); }
+.rv-info { border-left-color: var(--accent); }
+.rv-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.rv-table td, .rv-table th { padding: 3px 8px 3px 0; text-align: left; }
+.rv-table th { color: var(--dim); font-size: 11px; font-weight: normal; text-transform: uppercase; letter-spacing: .06em; }
+.rv-num { text-align: right; color: var(--text); }
+.rv-turn { color: var(--dim); }
+.rv-corp { color: #cbb3e3; }
+.rv-runner { color: var(--accent); }
+.rv-endrow { display: flex; gap: 24px; }
+.rv-endcol { flex: 1; font-size: 13px; }
+.rv-endhead { font-weight: bold; margin-bottom: 4px; letter-spacing: .05em; }
+.rv-dmg { color: var(--dim); font-size: 12px; margin-top: 10px; }
+
 /* ---------- symbols ---------- */
 .sym { white-space: nowrap; }
 .sym i { font-style: normal; font-size: 9px; vertical-align: super; }
@@ -342,6 +393,8 @@ button, select, input { font: inherit; }
     </div>
   </div>
 </div>
+
+<div id="review" class="review-overlay" style="display:none"></div>
 
 <script>window.__CARDS__ = {
  "meta": {
@@ -4556,8 +4609,8 @@ button, select, input { font: inherit; }
   }
   function trash(g, id, why = "") {
     let it = inst(g, id);
-    for (let other of Object.values(g.insts))
-      other.hostId === id && !other.zone.startsWith("corp-") && !other.zone.startsWith("runner-") && trash(g, other.id, "host trashed");
+    for (let other2 of Object.values(g.insts))
+      other2.hostId === id && !other2.zone.startsWith("corp-") && !other2.zone.startsWith("runner-") && trash(g, other2.id, "host trashed");
     let to = it.card.side === "corp" ? "corp-archives" : "runner-discard";
     it.faceup = !0, moveCard(g, id, to), emit(g, "card-trashed", { id, code: it.code, title: it.card.title, why });
   }
@@ -5171,7 +5224,6 @@ button, select, input { font: inherit; }
       case "rez":
         yield* rezFx(g, id);
         break;
-      // free action, no click
       case "cardact": {
         let entry = cardActions(g, "corp").find((e) => e.id === pick);
         yield* runCardAction(g, "corp", entry);
@@ -7873,7 +7925,7 @@ button, select, input { font: inherit; }
         cardsJson,
         gameConfig(TUTORIAL_CORP_DECK, TUTORIAL_RUNNER_DECK, 11)
       ), this.ctl = new AIController(this.game, {
-        corp: new CorpAI({ level: "standard", seed: 78 })
+        corp: new CorpAI({ level: "standard", seed: 11 * 7 + 1 })
       }), this.stepIndex = 0, this.mismatch = null, this.shownEvents = /* @__PURE__ */ new Set(), this.logMark = 0;
     }
     get guided() {
@@ -8285,6 +8337,8 @@ button, select, input { font: inherit; }
       promptEl.appendChild(h(`<div class="prompt-head log-over">GAME OVER \u2014 ${game.state.winner.toUpperCase()} wins</div>`)), promptEl.appendChild(h(`<div class="prompt-sub">${escapeHtml(game.state.winReason ?? "")}</div>`));
       let b = h('<button class="btn btn-primary">New game</button>');
       b.addEventListener("click", () => app2.newGame()), promptEl.appendChild(b);
+      let rb = h('<button class="btn btn-review">Review game</button>');
+      rb.addEventListener("click", () => app2.showReview()), promptEl.appendChild(rb);
       return;
     }
     if (!d) return;
@@ -8329,6 +8383,182 @@ button, select, input { font: inherit; }
       el && el.classList.add("actionable");
     }
     renderLog(g, viewer, els.log), renderCallout(app2, els.callout), renderPrompt(app2, els.prompt);
+  }
+
+  // analysis/analyze.js
+  var other = (side) => side === "corp" ? "runner" : "corp", CAP = (s) => s === "corp" ? "Corp" : "Runner";
+  function analyzeClicks(log) {
+    let bySide = {
+      corp: { creditClicks: 0, turns: {} },
+      runner: { creditClicks: 0, turns: {} }
+    };
+    for (let ev of log) {
+      if (ev.type !== "credits-gained" || ev.data.why !== "click") continue;
+      let side = ev.data.who, b = bySide[side];
+      b && (b.creditClicks++, b.turns[ev.turn] = (b.turns[ev.turn] ?? 0) + 1);
+    }
+    let THRESH = { corp: 3, runner: 4 }, grindTurns = { corp: [], runner: [] };
+    for (let side of ["corp", "runner"])
+      for (let [turn, n] of Object.entries(bySide[side].turns))
+        n >= THRESH[side] && grindTurns[side].push(Number(turn));
+    return {
+      corp: { creditClicks: bySide.corp.creditClicks, grindTurns: grindTurns.corp },
+      runner: { creditClicks: bySide.runner.creditClicks, grindTurns: grindTurns.runner }
+    };
+  }
+  function analyzeEconomy(log, state) {
+    let out = {
+      corp: { gained: 0, spent: 0, final: state.corp.credits },
+      runner: { gained: 0, spent: 0, final: state.runner.credits }
+    };
+    for (let ev of log)
+      ev.type === "credits-gained" && out[ev.data.who] && (out[ev.data.who].gained += ev.data.n), ev.type === "credits-spent" && out[ev.data.who] && (out[ev.data.who].spent += ev.data.n);
+    return out;
+  }
+  function analyzeRuns(log) {
+    let runs = [], cur = null;
+    for (let ev of log) {
+      let d = ev.data;
+      if (ev.type === "run-start")
+        cur = { turn: ev.turn, server: d.server, cost: 0, accesses: 0, agendaPoints: 0, successful: null };
+      else if (cur)
+        ev.type === "credits-spent" && d.who === "runner" ? cur.cost += d.n : ev.type === "card-accessed" ? cur.accesses++ : ev.type === "agenda-stolen" ? cur.agendaPoints += d.points : ev.type === "run-end" && (cur.successful = d.successful, runs.push(cur), cur = null);
+      else continue;
+    }
+    return runs;
+  }
+  function analyzeScoring(log) {
+    let timeline = [];
+    for (let ev of log)
+      ev.type === "agenda-scored" ? timeline.push({ turn: ev.turn, side: "corp", title: ev.data.title, points: ev.data.points, total: ev.data.total }) : ev.type === "agenda-stolen" && timeline.push({ turn: ev.turn, side: "runner", title: ev.data.title, points: ev.data.points, total: ev.data.total });
+    return timeline;
+  }
+  function analyzeDamage(log) {
+    let events = [];
+    for (let ev of log)
+      ev.type === "damage" && events.push({ turn: ev.turn, type: ev.data.type, n: ev.data.n, why: ev.data.why });
+    let over = log.filter((e) => e.type === "game-over").pop();
+    return { events, flatline: over?.data.reason === "flatline" };
+  }
+  function analyzeEndgame(state) {
+    return {
+      corp: { credits: state.corp.credits, handSize: state.corp.hand.length, agendaPoints: state.corp.agendaPoints, badPublicity: state.corp.badPublicity },
+      runner: { credits: state.runner.credits, handSize: state.runner.hand.length, agendaPoints: state.runner.agendaPoints, tags: state.runner.tags, brainDamage: state.runner.brainDamage }
+    };
+  }
+  function buildFindings({ winner, clicks, economy, runs, damage: damage2, endgame }) {
+    let findings = [], add = (severity, turn, side, text) => findings.push({ severity, turn, side, text });
+    for (let side of ["corp", "runner"])
+      for (let turn of clicks[side].grindTurns)
+        add("info", turn, side, `${CAP(side)} spent the whole turn ${turn} clicking for credits \u2014 no plays, installs, or runs.`);
+    for (let run of runs)
+      run.successful === !1 && run.cost >= 3 ? add("bad", run.turn, "runner", `Spent ${run.cost}cr running ${run.server} on turn ${run.turn} and didn't get through.`) : run.successful === !0 && run.agendaPoints >= 2 && run.cost <= 1 && add("good", run.turn, "runner", `Cheap steal: ${run.agendaPoints} agenda points off ${run.server} on turn ${run.turn} for only ${run.cost}cr.`);
+    if (winner) {
+      let loser = other(winner), snap = endgame[loser];
+      loser === "corp" && snap.credits >= 6 && add("info", null, "corp", `Corp ended the game with ${snap.credits}cr still banked and unspent.`), loser === "runner" && snap.credits >= 6 && add("info", null, "runner", `Runner ended the game with ${snap.credits}cr still banked and unspent.`), loser === "runner" && snap.handSize >= 3 && add("info", null, "runner", `Runner was holding ${snap.handSize} cards in the grip at game end.`);
+    }
+    return damage2.flatline && add("bad", null, "runner", "The game ended in a flatline: damage exceeded the Runner\u2019s grip."), findings.sort((a, b) => (a.turn ?? 1 / 0) - (b.turn ?? 1 / 0));
+  }
+  function analyzeGame(game) {
+    let log = game.log, state = game.state, clicks = analyzeClicks(log), economy = analyzeEconomy(log, state), runs = analyzeRuns(log), scoring = analyzeScoring(log), damage2 = analyzeDamage(log), endgame = analyzeEndgame(state), winner = state.winner ?? null, findings = buildFindings({ winner, clicks, economy, runs, damage: damage2, endgame });
+    return {
+      winner,
+      reason: state.winReason ?? null,
+      turns: state.turn,
+      clicks,
+      economy,
+      runs,
+      scoring,
+      damage: damage2,
+      endgame,
+      findings
+    };
+  }
+
+  // ui/reviewpanel.js
+  var CAP2 = (s) => s === "corp" ? "Corp" : s === "runner" ? "Runner" : "", sevClass = (sev) => ({ good: "rv-good", bad: "rv-bad", info: "rv-info" })[sev] ?? "rv-info";
+  function findingsHtml(findings) {
+    return findings.length ? findings.map((f) => `
+    <div class="rv-finding ${sevClass(f.severity)}">
+      <span class="rv-turn">${f.turn != null ? `T${f.turn}` : "\u2014"}</span>
+      <span class="rv-text">${escapeHtml(f.text)}</span>
+    </div>`).join("") : '<div class="rv-empty">Nothing notable flagged this game.</div>';
+  }
+  function scoringHtml(scoring) {
+    return scoring.length ? `<table class="rv-table"><tbody>${scoring.map((s) => `
+    <tr>
+      <td class="rv-turn">T${s.turn}</td>
+      <td class="${s.side === "corp" ? "rv-corp" : "rv-runner"}">${CAP2(s.side)}</td>
+      <td>${escapeHtml(s.title)}</td>
+      <td class="rv-num">+${s.points}</td>
+      <td class="rv-num">(${s.total})</td>
+    </tr>`).join("")}</tbody></table>` : '<div class="rv-empty">No agendas scored or stolen.</div>';
+  }
+  function economyHtml(economy, clicks) {
+    let row = (side) => `
+    <tr>
+      <td class="${side === "corp" ? "rv-corp" : "rv-runner"}">${CAP2(side)}</td>
+      <td class="rv-num">${economy[side].gained}cr</td>
+      <td class="rv-num">${economy[side].spent}cr</td>
+      <td class="rv-num">${economy[side].final}cr</td>
+      <td class="rv-num">${clicks[side].creditClicks}</td>
+    </tr>`;
+    return `<table class="rv-table rv-econ">
+    <thead><tr><th></th><th>Gained</th><th>Spent</th><th>Final</th><th>Credit-clicks</th></tr></thead>
+    <tbody>${row("corp")}${row("runner")}</tbody>
+  </table>`;
+  }
+  function runsHtml(runs) {
+    return runs.length ? `<table class="rv-table"><tbody>${runs.map((r) => `
+    <tr>
+      <td class="rv-turn">T${r.turn}</td>
+      <td>${escapeHtml(serverName(r.server))}</td>
+      <td class="${r.successful ? "rv-good" : "rv-bad"}">${r.successful ? "success" : "no entry"}</td>
+      <td class="rv-num">${r.cost}cr</td>
+      <td class="rv-num">${r.accesses} access${r.accesses === 1 ? "" : "es"}</td>
+      <td class="rv-num">${r.agendaPoints ? `+${r.agendaPoints}pt` : ""}</td>
+    </tr>`).join("")}</tbody></table>` : '<div class="rv-empty">No runs made.</div>';
+  }
+  function endgameHtml(endgame, damage2) {
+    let side = (s) => `
+    <div class="rv-endcol">
+      <div class="rv-endhead ${s === "corp" ? "rv-corp" : "rv-runner"}">${CAP2(s)}</div>
+      <div>${endgame[s].credits}cr banked</div>
+      <div>${endgame[s].handSize} card${endgame[s].handSize === 1 ? "" : "s"} in hand</div>
+      <div>${endgame[s].agendaPoints} agenda pts</div>
+      ${s === "runner" ? `<div>${endgame.runner.tags} tag${endgame.runner.tags === 1 ? "" : "s"}, ${endgame.runner.brainDamage} brain dmg</div>` : `<div>${endgame.corp.badPublicity} bad pub</div>`}
+    </div>`, dmg = damage2.events.length ? `<div class="rv-dmg">${damage2.events.map((d) => `T${d.turn}: ${d.n} ${d.type} dmg${d.why ? ` (${escapeHtml(d.why)})` : ""}`).join(" \xB7 ")}</div>` : "";
+    return `<div class="rv-endrow">${side("corp")}${side("runner")}</div>${dmg}`;
+  }
+  function reviewHtml(report) {
+    return `
+    <div class="review-head">
+      <div class="review-title">POST-GAME REVIEW</div>
+      <div class="review-sub">${report.winner ? `${CAP2(report.winner)} wins (${escapeHtml(report.reason ?? "")}) \u2014 ${report.turns} turn${report.turns === 1 ? "" : "s"}` : "Game in progress"}</div>
+      <button class="btn review-close">Close</button>
+    </div>
+    <div class="review-body">
+      <section class="rv-section">
+        <h3>Findings</h3>
+        ${findingsHtml(report.findings)}
+      </section>
+      <section class="rv-section">
+        <h3>Scoring timeline</h3>
+        ${scoringHtml(report.scoring)}
+      </section>
+      <section class="rv-section">
+        <h3>Economy</h3>
+        ${economyHtml(report.economy, report.clicks)}
+      </section>
+      <section class="rv-section">
+        <h3>Runs</h3>
+        ${runsHtml(report.runs)}
+      </section>
+      <section class="rv-section">
+        <h3>End of game</h3>
+        ${endgameHtml(report.endgame, report.damage)}
+      </section>
+    </div>`;
   }
 
   // ui/main.js
@@ -8443,7 +8673,15 @@ button, select, input { font: inherit; }
       this._seen = evs.length;
     },
     newGame() {
-      clearTimeout(this._paceTimer), this._pacing = !1, $("#table").style.display = "none", $("#setup").style.display = "";
+      clearTimeout(this._paceTimer), this._pacing = !1, this.closeReview(), $("#table").style.display = "none", $("#setup").style.display = "";
+    },
+    // ---- post-game review (Phase 7) ----
+    showReview() {
+      let report = analyzeGame(this.game);
+      this.els.review.innerHTML = reviewHtml(report), this.els.review.style.display = "flex", this.els.review.querySelector(".review-close").addEventListener("click", () => this.closeReview());
+    },
+    closeReview() {
+      this.els.review.style.display = "none", this.els.review.innerHTML = "";
     },
     // ---- board interaction ----
     onCardClick(instId, el, card) {
@@ -8517,10 +8755,15 @@ button, select, input { font: inherit; }
       log: $("#log"),
       prompt: $("#prompt"),
       inspector: $("#inspector"),
-      callout: $("#callout")
+      callout: $("#callout"),
+      review: $("#review")
     }, $("#btn-tutorial").addEventListener("click", () => app.startTutorial()), document.body.addEventListener("click", () => app.closePopover()), $("#btn-step1").addEventListener("click", () => app.step(1)), $("#btn-step25").addEventListener("click", () => app.step(25)), $("#btn-stepturn").addEventListener("click", () => app.stepTurn()), document.addEventListener("keydown", (e) => {
       if ($("#table").style.display === "none") return;
       if (e.key === "Escape") {
+        if (app.els.review.style.display !== "none") {
+          app.closeReview();
+          return;
+        }
         app.closePopover();
         return;
       }

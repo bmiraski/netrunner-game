@@ -81,6 +81,16 @@ async function runSide(side) {
   if (errors.length) throw new Error(`${side}: ${errors.length} page errors, first: ${errors[0]?.stack ?? errors[0]}`);
   if (!$$('.log-over').length) throw new Error(`${side}: game did not finish in ${CAP} interactions`);
   if (!$('#inspector .card-full')) throw new Error(`${side}: auto-inspect never populated the card details panel`);
+
+  // Phase 7: post-game review overlay
+  const reviewBtn = $$('#prompt button').find(b => b.textContent === 'Review game');
+  if (!reviewBtn) throw new Error(`${side}: no Review game button after game-over`);
+  reviewBtn.click();
+  if ($('#review').style.display === 'none') throw new Error(`${side}: review overlay did not open`);
+  if (!$('#review .review-title')) throw new Error(`${side}: review overlay has no content`);
+  $('#review .review-close').click();
+  if ($('#review').style.display !== 'none') throw new Error(`${side}: review overlay did not close`);
+  if (errors.length) throw new Error(`${side}: review panel raised ${errors.length} page errors, first: ${errors[0]?.stack ?? errors[0]}`);
   const logLines = $$('.log-line').length;
   const over = $$('.log-over')[0].textContent;
   console.log(`  ok  ${side.padEnd(6)} — finished after ${clicks} interactions, ${logLines} log lines: ${over.slice(0, 70)}`);

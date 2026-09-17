@@ -104,11 +104,31 @@
     non-ice rez window currently only offered at server approach (not also
     for e.g. upgrades rezzed reactively mid-encounter); no generic Runner
     encounter-side paid-ability window (beyond the boost/break menu).
-- Next: **Phase 7 — Post-game feedback** (BUILD_PLAN): rule-based analysis of
-  the event log (economy efficiency, floated clicks, missed scoring windows,
-  run risk/reward, unspent resources at loss, key turning points) presented
-  as a turn-annotated review screen after each game. The full game.log is
-  already the single source of truth — analysis/ consumes it read-only.
+- **Phase 7 (Post-game feedback): COMPLETE** — 2026-09-16. Architecture:
+  `docs/ANALYSIS.md`.
+  - `analysis/analyze.js`: `analyzeGame(game)` — rule-based (no AI-generated
+    text) detectors over `game.log` + final state: click-grind detection
+    (turns spent entirely clicking for credits), economy totals, per-run
+    cost/value (slices the log between `run-start`/`run-end`), the agenda
+    scoring timeline (turning points), damage/flatline summary, and an
+    endgame snapshot (unspent resources at loss). Findings are flat,
+    turn-sorted, template-only.
+  - `ui/reviewpanel.js` + a "Review game" button on the game-over prompt
+    (`ui/render.js`) opening a full-screen overlay (`app.showReview()` /
+    `closeReview()` in `main.js`); Escape or Close dismiss it.
+  - Verification: `tests/analysis.test.js` (7 tests: driven-game detector
+    checks, a synthetic-log fixture for run verdict thresholds, a soak pass
+    over all 12 matchups asserting no throws and totals consistent with
+    `game.state`); `tests/ui.test.js` gained a review-panel no-throw/no-leak
+    check; `tools/ui-smoke.js` clicks "Review game" → asserts the overlay
+    opens with content → closes it, in every mode (runner/corp/watch/
+    tutorial), against the BUILT bundle. Suite: **245 passing, 0 failing**.
+- Next: **Phase 8 — Stats tracking** (BUILD_PLAN): every completed game
+  recorded to localStorage (date, side, identity, opponent deck, result,
+  score, turns, key metrics), a stats screen (win rate over time, by side/
+  faction, streaks), JSON export/import. `analysis/analyze.js`'s report is a
+  natural per-game record to persist — consider reusing its shape (or a
+  slimmed summary of it) rather than inventing a second one.
 
 ## GitHub (sync at the end of every step)
 - Repo: `bmiraski/netrunner-game` (main). Access token: `.git-token` file in
@@ -161,18 +181,21 @@ docs/
   UI.md               ← UI architecture (Phase 5): decision renderer, perspective
                         rules, run panel, keyboard, pacing
   TUTORIAL.md         ← tutorial architecture (Phase 6): guided script, callouts, hints
+  ANALYSIS.md         ← post-game analysis architecture (Phase 7): detectors,
+                        findings, review overlay
 engine/               ← rules engine (rng, events, state, decisions, effects,
                         game, run, db) — see ENGINE.md
 cards/                ← registry.js + pilots.js + waves-a/b/c/d.js (132 cards)
 ai/                   ← view/base/corp/runner/controller/decks — see AI.md
-tests/                ← run-tests.js + 11 *.test.js files (237 tests)
+tests/                ← run-tests.js + 12 *.test.js files (245 tests)
 tools/                ← soak.js (AI-vs-AI matrix), bundle.js (esbuild ->
                         netrunner.html), ui-smoke.js (jsdom bundle playthrough)
 ui/                   ← browser UI (see docs/UI.md): index.html, main.js,
-                        render.js, cardtext.js, logtext.js, style.css
+                        render.js, cardtext.js, logtext.js, reviewpanel.js, style.css
 tutorial/             ← guided script + controller + hints — see TUTORIAL.md
+analysis/             ← analyze.js (rule-based post-game detectors) — see ANALYSIS.md
 netrunner.html        ← COMMITTED single-file build (double-click to play)
-analysis/ stats/      ← empty, Phases 7+
+stats/                ← empty, Phase 8
 ```
 
 ## Card data facts
@@ -199,19 +222,22 @@ analysis/ stats/      ← empty, Phases 7+
 - Write unit tests in `tests/` as engine features land, runnable via `node` in sandbox
 - Update the Status section of this file at the end of every working session
 
-## Phase 7 pointers (next session)
-- Post-game analysis is rule-based (locked decision) over game.log. Read
-  docs/ENGINE.md event catalog notes + ui/logtext.js for every event type.
-- Candidate detectors: floated clicks (turn-start credits vs clicks spent on
-  'click' credits), wasted credits at loss, agendas left scorable (corp had
-  window: scorable agenda + credits while runner poor), run EV in hindsight
-  (accesses vs credits spent), damage deaths with cards in grip, turning
-  points (agenda swings, big trashes).
-- Present as a review screen after game-over (analysis/ module + UI panel or
-  overlay); keep detectors unit-tested against scripted logs.
+## Phase 8 pointers (next session)
+- Stats tracking (BUILD_PLAN): every completed game recorded to
+  localStorage — date, side, identity, opponent deck, result, score, turns,
+  key metrics. `analysis/analyze.js`'s report (Phase 7) already computes
+  most of a per-game record; consider persisting a slimmed version of it
+  (or the whole thing) rather than deriving a second summary shape.
+- Stats screen: win rate over time, by side and by faction, trend charts,
+  streaks. JSON export/import so history survives browser data resets
+  (locked decision — no server, no accounts).
+- Where to hook the save: `game.state.winner` becoming truthy (same moment
+  the "Review game" button appears, `ui/render.js` `renderPrompt`) is the
+  natural point to also write the localStorage record — check it isn't
+  double-written on re-render.
 - Rebuild + verify cycle: `npm run build` then `node tools/ui-smoke.js`
-  (sandbox: npm install jsdom --prefix /tmp/jsd + JSDOM_DIR=/tmp/jsd,
-  npm install esbuild --prefix /tmp/esb + ESBUILD=.../esbuild). Tests:
-  `node tests/run-tests.js` (237 green); tutorial replay test breaks loudly
-  if engine/AI changes shift the seed-11 tutorial game — re-author per
-  docs/TUTORIAL.md.
+  (jsdom must be resolvable: `npm install jsdom`, or `JSDOM_DIR=...` if
+  installed elsewhere; esbuild likewise via `npm install` or `ESBUILD=...`).
+  Tests: `node tests/run-tests.js` (245 green); tutorial replay test breaks
+  loudly if engine/AI changes shift the seed-11 tutorial game — re-author
+  per docs/TUTORIAL.md.

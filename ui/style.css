@@ -262,6 +262,57 @@ button, select, input { font: inherit; }
   box-shadow: 0 6px 24px rgba(0,0,0,.6);
 }
 
+/* ---------- post-game review (Phase 7) ---------- */
+.btn-review { border-color: var(--gold); color: var(--gold); }
+.btn-review:hover { box-shadow: 0 0 12px rgba(255,210,63,.3) inset; }
+.review-overlay {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(4,6,10,.82);
+  display: flex; align-items: center; justify-content: center;
+}
+.review-overlay > div, .review-overlay .review-head, .review-overlay .review-body { box-sizing: border-box; }
+#review { flex-direction: column; }
+.review-head {
+  position: relative; width: min(880px, 92vw); margin: 4vh auto 0;
+  background: var(--panel); border: 1px solid var(--gold); border-bottom: none;
+  border-radius: 8px 8px 0 0; padding: 14px 20px;
+}
+.review-title { color: var(--gold); letter-spacing: .25em; font-size: 13px; }
+.review-sub { color: var(--dim); margin-top: 4px; }
+.review-close { position: absolute; top: 12px; right: 16px; }
+.review-body {
+  width: min(880px, 92vw); max-height: 82vh; overflow: auto; margin: 0 auto 4vh;
+  background: var(--bg2); border: 1px solid var(--edge); border-top: none;
+  border-radius: 0 0 8px 8px; padding: 6px 20px 18px;
+}
+.rv-section { margin-top: 16px; }
+.rv-section h3 {
+  color: var(--accent); font-size: 12px; letter-spacing: .18em; text-transform: uppercase;
+  margin: 0 0 8px; border-bottom: 1px dotted var(--edge); padding-bottom: 4px;
+}
+.rv-empty { color: var(--dim); font-size: 13px; }
+.rv-finding {
+  display: flex; gap: 10px; padding: 5px 8px; border-radius: 4px; margin-bottom: 3px;
+  border-left: 3px solid var(--edge); background: rgba(255,255,255,.02);
+}
+.rv-finding .rv-turn { color: var(--dim); min-width: 32px; font-size: 11px; }
+.rv-good { border-left-color: var(--good); }
+.rv-good .rv-text { color: var(--good); }
+.rv-bad { border-left-color: var(--danger); }
+.rv-bad .rv-text { color: var(--danger); }
+.rv-info { border-left-color: var(--accent); }
+.rv-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.rv-table td, .rv-table th { padding: 3px 8px 3px 0; text-align: left; }
+.rv-table th { color: var(--dim); font-size: 11px; font-weight: normal; text-transform: uppercase; letter-spacing: .06em; }
+.rv-num { text-align: right; color: var(--text); }
+.rv-turn { color: var(--dim); }
+.rv-corp { color: #cbb3e3; }
+.rv-runner { color: var(--accent); }
+.rv-endrow { display: flex; gap: 24px; }
+.rv-endcol { flex: 1; font-size: 13px; }
+.rv-endhead { font-weight: bold; margin-bottom: 4px; letter-spacing: .05em; }
+.rv-dmg { color: var(--dim); font-size: 12px; margin-top: 10px; }
+
 /* ---------- symbols ---------- */
 .sym { white-space: nowrap; }
 .sym i { font-style: normal; font-size: 9px; vertical-align: super; }

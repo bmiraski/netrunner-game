@@ -7,8 +7,22 @@ import { autoplay } from '../ai/index.js';
 import { eventText } from '../ui/logtext.js';
 import { markupToHtml, factionColor } from '../ui/cardtext.js';
 import { buildOptionMap } from '../ui/render.js';
+import { analyzeGame } from '../analysis/analyze.js';
+import { reviewHtml } from '../ui/reviewpanel.js';
 
 export default [
+
+  ['review panel renders without throwing or leaking undefined across full games', () => {
+    for (const [corpDeck, runnerDeck, seed] of [
+      ['hb-core', 'gabe-core', 3], ['jinteki-core', 'reina-core', 5],
+      ['nbn-core', 'ct-core', 7], ['weyland-core', 'gabe-core', 11],
+    ]) {
+      const { game } = autoplay({ cardsJson, seed, corpDeck, runnerDeck });
+      const html = reviewHtml(analyzeGame(game));
+      assert.ok(html.includes('POST-GAME REVIEW'));
+      assert.ok(!/undefined|null|\[object/.test(html), `bad interpolation for ${corpDeck} vs ${runnerDeck}: contains undefined/null/[object]`);
+    }
+  }],
 
   ['log rendering covers every event type in full games (no unknowns, no throws)', () => {
     const seen = new Set(), unknown = new Set();

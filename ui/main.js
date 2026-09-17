@@ -12,6 +12,8 @@ import { TutorialController } from '../tutorial/tutorial.js';
 import { hintFor } from '../tutorial/hints.js';
 import { render } from './render.js';
 import { cardPanelHtml, escapeHtml } from './cardtext.js';
+import { analyzeGame } from '../analysis/analyze.js';
+import { reviewHtml } from './reviewpanel.js';
 
 async function loadCards() {
   if (window.__CARDS__) return window.__CARDS__;           // bundled build
@@ -177,8 +179,21 @@ const app = {
   newGame() {
     clearTimeout(this._paceTimer);
     this._pacing = false;
+    this.closeReview();
     $('#table').style.display = 'none';
     $('#setup').style.display = '';
+  },
+
+  // ---- post-game review (Phase 7) ----
+  showReview() {
+    const report = analyzeGame(this.game);
+    this.els.review.innerHTML = reviewHtml(report);
+    this.els.review.style.display = 'flex';
+    this.els.review.querySelector('.review-close').addEventListener('click', () => this.closeReview());
+  },
+  closeReview() {
+    this.els.review.style.display = 'none';
+    this.els.review.innerHTML = '';
   },
 
   // ---- board interaction ----
@@ -272,6 +287,7 @@ async function init() {
   app.els = {
     corpZone: $('#corp-zone'), midZone: $('#mid-zone'), runnerZone: $('#runner-zone'),
     log: $('#log'), prompt: $('#prompt'), inspector: $('#inspector'), callout: $('#callout'),
+    review: $('#review'),
   };
   $('#btn-tutorial').addEventListener('click', () => app.startTutorial());
   document.body.addEventListener('click', () => app.closePopover());
@@ -283,7 +299,10 @@ async function init() {
   // Escape closes the popover
   document.addEventListener('keydown', (e) => {
     if ($('#table').style.display === 'none') return;    // setup screen
-    if (e.key === 'Escape') { app.closePopover(); return; }
+    if (e.key === 'Escape') {
+      if (app.els.review.style.display !== 'none') { app.closeReview(); return; }
+      app.closePopover(); return;
+    }
     if (e.target.tagName === 'INPUT') {
       if (e.key === 'Enter') { $('.num-row button')?.click(); e.preventDefault(); }
       return;

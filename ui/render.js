@@ -294,6 +294,9 @@ function renderPrompt(app, promptEl) {
     const b = h('<button class="btn btn-primary">New game</button>');
     b.addEventListener('click', () => app.newGame());
     promptEl.appendChild(b);
+    const rb = h('<button class="btn btn-review">Review game</button>');
+    rb.addEventListener('click', () => app.showReview());
+    promptEl.appendChild(rb);
     return;
   }
   if (!d) return;
