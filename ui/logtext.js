@@ -25,6 +25,7 @@ export function eventText(ev, g, viewer) {
     // --- economy ---
     'credits-gained': () => `${who(d.who)} gains ${d.n}cr${d.why ? ` (${d.why})` : ''}.`,
     'credits-spent':  () => `${who(d.who)} spends ${d.n}cr${d.why ? ` (${d.why})` : ''}.`,
+    'credits-lost':   () => `${who(d.who)} loses ${d.n != null ? `${d.n}cr` : 'all credits'}${d.why ? ` (${d.why})` : ''}.`,
     'pool-credits-spent': () => `${d.used}cr from ${d.from} spent (${d.why}).`,
     'counters-loaded': () => `${t(d.id)} loaded with ${d.n} ${d.kind} counter${d.n === 1 ? '' : 's'}.`,
     'counters-added': () => `${t(d.id)}: ${d.n > 0 ? '+' : ''}${d.n} ${d.kind} counter${Math.abs(d.n) === 1 ? '' : 's'} (now ${d.total}).`,
@@ -69,6 +70,7 @@ export function eventText(ev, g, viewer) {
     'jack-out':       () => `Runner jacks out.`,
     'cannot-jack-out': () => `Runner cannot jack out.`,
     'server-changed': () => `Run redirected: ${serverName(d.from)} → ${serverName(d.to)}.`,
+    'ice-moved':      () => `${t(d.iceId)} moves to protect ${serverName(d.to)}.`,
     'run-successful': () => ({ text: `Run on ${serverName(d.server)} is successful.`, cls: 'log-good' }),
     'run-end':        () => d.successful ? null : `Run on ${serverName(d.server)} ends unsuccessfully.`,
     'archer-rez-invalid': () => `Archer rez attempted without a scored agenda — invalid.`,

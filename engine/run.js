@@ -14,6 +14,12 @@ import { emit, pay, canPay, stealAgendaFx, trash, rezCost, rezFx } from './effec
 import { getScript } from '../cards/registry.js';
 import { collect, modSum, installedRunner } from './hooks.js';
 
+// Encryption Protocol: "the trash cost of all installed cards is increased
+// by 1." Generic modifier hook, summed like iceStrengthMod/rezCostMod.
+export function trashCostOf(g, it) {
+  if (it.card.trashCost == null) return null;
+  return Math.max(0, it.card.trashCost + modSum(g, 'trashCostMod', it));
+}
 export function iceStrength(g, iceId) {
   const it = inst(g, iceId);
   const own = getScript(it.code)?.strengthBonus?.(g, it) ?? 0;
@@ -24,6 +30,11 @@ export function breakerStrength(g, bId) {
   const it = inst(g, bId);
   let n = (it.card.strength ?? 0) + it.encounterStr + it.runStr;
   n += modSum(g, 'breakerStrengthMod', it);   // The Personal Touch, Dinosaurus
+  // Until-end-of-turn buffs targeted at a specific breaker by id (The
+  // Helpful AI) — kept on flags.turn (reset every turn start) rather than a
+  // live hook, since the granting card (trashed to pay for the buff) is no
+  // longer around to provide one.
+  n += g.state.flags.turn.breakerBuffs?.[bId] ?? 0;
   return n;
 }
 function breakerMatches(g, bId, ice) {
@@ -46,7 +57,17 @@ export function activeSubs(g, ice) {
   const script = getScript(ice.code);
   const subs = script?.subroutines ?? [];
   const idx = script?.activeSubIndices?.(g, ice) ?? subs.map((_, i) => i); // Hive
-  return idx.map(i => ({ ...subs[i], index: i }));
+  let list = idx.map(i => ({ ...subs[i], index: i }));
+  // Sensei: for the remainder of THIS run, every OTHER piece of ice gains
+  // "Subroutine End the run." after its own subs. `s.run.senseiIceId` is
+  // set by Sensei's own subroutine when it resolves (cards/waves-genesis-c.js).
+  if (g.state.run?.senseiIceId != null && g.state.run.senseiIceId !== ice.id) {
+    list = [...list, {
+      label: 'End the run', index: 'sensei-etr',
+      *resolve(g) { g.state.run.ended = true; emit(g, 'run-ends-sub', {}); },
+    }];
+  }
+  return list;
 }
 
 export function* doRun(g, sid, mods = {}) {
@@ -64,9 +85,18 @@ export function* doRun(g, sid, mods = {}) {
 
   let approaches = 0;
   for (let pos = server.ice.length - 1; pos >= 0 && !s.winner; pos--) {
-    const iceId = server.ice[pos];
-    const ice = inst(g, iceId);
+    let iceId = server.ice[pos];
+    let ice = inst(g, iceId);
     emit(g, 'approach-ice', { server: sid, position: pos, iceId, rezzed: ice.rezzed, title: ice.rezzed ? ice.card.title : null });
+
+    // Approach-time abilities (Snitch: expose the unrezzed ice, then may
+    // jack out; Midori: corp may swap the approached ice for one from HQ,
+    // installed unrezzed) — re-read iceId/ice afterward since a Midori swap
+    // changes what's actually sitting at this position.
+    yield* offerApproachAbilities(g, iceId, sid);
+    if (s.run.ended || s.winner) break;
+    iceId = server.ice[pos];
+    ice = inst(g, iceId);
 
     // 2.1 jack out (not on first approach; Whirlpool can forbid)
     if (approaches > 0 && !s.run.cannotJackOut) {
@@ -102,6 +132,18 @@ export function* doRun(g, sid, mods = {}) {
     emit(g, 'ice-passed', { iceId, rezzed: ice.rezzed });
     // ice may have left play (Himitsu-Bako); re-sync position
     pos = Math.min(pos, server.ice.length);
+    // Bullfrog-style mid-run relocation: its subroutine can move itself (and
+    // thereby the run) to the outermost position of a different server,
+    // signalled via s.run.redirect = {sid, pos} (cards/waves-genesis-c.js).
+    // `pos + 1` because the for-loop's own `pos--` runs immediately after
+    // this block, on the way to the next iteration.
+    if (s.run.redirect) {
+      sid = s.run.redirect.sid;
+      server = s.corp.servers[sid];
+      s.run.server = sid;
+      pos = s.run.redirect.pos + 1;
+      s.run.redirect = null;
+    }
   }
 
   // 4. approach server
@@ -216,6 +258,36 @@ function* corpRunWindow(g, sid, approachedIceId) {
   }
 }
 
+// Approach-time abilities offered right as ice is approached, before the
+// jack-out decision: Snitch (runner, unrezzed ice: expose it, may jack out)
+// and Midori (corp, ice protecting its own server: may swap it for one from
+// HQ, installed unrezzed). Generic on `it.card.side` so either side's card
+// can hook in; `req` sees the approached iceId and the server sid so a
+// server-scoped upgrade like Midori can confirm it's actually its own server.
+function* offerApproachAbilities(g, iceId, sid) {
+  const s = g.state;
+  for (const h of collect(g, 'approachAbility')) {
+    const a = h.script.approachAbility;
+    if (!a.req(g, h.it, iceId, sid)) continue;
+    const c = yield choice(h.it.card.side, `${h.it.card.title}: ${a.label}?`,
+      [opt('yes', a.label), opt('no', 'Decline')], { runStep: 'approach-ability' });
+    if (c === 'yes') yield* a.effect(g, { instId: h.id, iceId, sid });
+    if (s.run.ended || s.winner) return;
+  }
+}
+
+// e3 Feedback Implants: "whenever you break a subroutine on a piece of ice,
+// you may pay 1cr to break 1 [more] subroutine on that ice." Fired after
+// EVERY individual subroutine break (breaker-paid or click-broken) — a
+// generic reactive hook, not a menu option alongside the normal break
+// choices, since it can chain off any break including its own.
+export function* fireSubBroken(g, iceId, breakerId) {
+  for (const h of collect(g, 'onSubBroken')) {
+    yield* h.fn(g, { iceId, breakerId, instId: h.id });
+    if (g.state.run?.ended || g.state.winner) return;
+  }
+}
+
 function* offerBypassAbilities(g, iceId) {
   for (const h of collect(g, 'bypassAbility')) {  // Femme Fatale
     const b = h.script.bypassAbility;
@@ -253,12 +325,15 @@ function* encounterIce(g, iceId) {
       if (bs.boost && canPay(g, 'runner', bs.boost.cost, 'icebreaker')) {
         options.push(opt(`boost:${bId}`, `${b.card.title}: +${bs.boost.amount} strength (${bs.boost.cost}cr) [now ${breakerStrength(g, bId)} vs ${iceStrength(g, iceId)}]`));
       }
-      if (bs.breakCost && canPay(g, 'runner', bs.breakCost.cost, 'icebreaker') &&
-          breakerStrength(g, bId) >= iceStrength(g, iceId)) {
+      // trashSelf (Deus X: "Interface -> trash: break any number of AP
+      // subroutines"): the cost is trashing the breaker itself, not credits.
+      const breakAffordable = bs.breakCost?.trashSelf || canPay(g, 'runner', bs.breakCost?.cost ?? 0, 'icebreaker');
+      if (bs.breakCost && breakAffordable && breakerStrength(g, bId) >= iceStrength(g, iceId)) {
         const unbroken = subs.filter(x => !ice.brokenSubs.includes(x.index));
         if (unbroken.length) {
           const n = bs.breakCost.count === 'all' ? unbroken.length : Math.min(bs.breakCost.count, unbroken.length);
-          options.push(opt(`break:${bId}`, `${b.card.title}: break ${n === 1 ? `"${unbroken[0].label}"` : `up to ${n} subroutines`} (${bs.breakCost.cost}cr)`));
+          const costLabel = bs.breakCost.trashSelf ? 'trash' : `${bs.breakCost.cost}cr`;
+          options.push(opt(`break:${bId}`, `${b.card.title}: break ${n === 1 ? `"${unbroken[0].label}"` : `up to ${n} subroutines`} (${costLabel})`));
         }
       }
     }
@@ -282,6 +357,8 @@ function* encounterIce(g, iceId) {
       const target = activeSubs(g, ice).find(x => !ice.brokenSubs.includes(x.index));
       ice.brokenSubs.push(target.index);
       emit(g, 'sub-broken', { iceId, sub: target.label, via: 'click' });
+      yield* fireSubBroken(g, iceId, null);
+      if (s.run.ended || s.winner) break;
       continue;
     }
     if (pick.startsWith('eability:')) {
@@ -298,7 +375,8 @@ function* encounterIce(g, iceId) {
       else inst(g, bId).encounterStr += bs.boost.amount;
       emit(g, 'breaker-boosted', { breakerId: bId, strength: breakerStrength(g, bId) });
     } else {
-      pay(g, 'runner', bs.breakCost.cost, 'break subroutine', 'icebreaker');
+      if (bs.breakCost.trashSelf) trash(g, bId, 'break subroutine');
+      else pay(g, 'runner', bs.breakCost.cost, 'break subroutine', 'icebreaker');
       inst(g, bId).usedThisEncounter = true;
       let remaining = bs.breakCost.count === 'all' ? Infinity : bs.breakCost.count;
       while (remaining > 0) {
@@ -313,8 +391,30 @@ function* encounterIce(g, iceId) {
         }
         ice.brokenSubs.push(target.index);
         emit(g, 'sub-broken', { iceId, sub: target.label });
+        // Snowball: gets stronger for the remainder of the run each time it
+        // breaks a subroutine.
+        if (bs.selfBoostOnBreak) {
+          inst(g, bId).runStr += bs.selfBoostOnBreak;
+          emit(g, 'breaker-boosted', { breakerId: bId, strength: breakerStrength(g, bId) });
+        }
+        yield* fireSubBroken(g, iceId, bId);
         remaining--;
+        if (s.run.ended || s.winner) break;
       }
+    }
+    if (s.run.ended || s.winner) break;
+  }
+
+  // Oversight AI: a hosted condition counter marks its host ice to be
+  // trashed if every subroutine on it got broken during this single
+  // encounter (checked once the breaker window closes, before subs fire —
+  // if everything's broken nothing was going to fire anyway).
+  if (!s.winner && !s.run.ended && ice.trashIfFullyBroken) {
+    const allSubs = activeSubs(g, ice);
+    if (allSubs.length && allSubs.every(x => ice.brokenSubs.includes(x.index))) {
+      trash(g, iceId, 'Oversight AI: fully broken');
+      s.run.encounterIce = null;
+      return;
     }
   }
 
@@ -412,11 +512,12 @@ export function* accessCard(g, id, sid) {
   if (it.card.type === 'agenda' && it.zone !== 'runner-score' && it.zone !== 'corp-score') {
     yield* stealDecision(g, id, sid);
   } else if (it.card.trashCost != null && !it.zone.startsWith('corp-archives')) {
-    if (canPay(g, 'runner', it.card.trashCost, 'trash')) {
-      const t = yield choice('runner', `Accessed ${it.card.title}. Trash for ${it.card.trashCost}cr?`,
-        [opt('trash', `Trash (${it.card.trashCost}cr)`), opt('leave', 'Leave it')], { runStep: 'access-trash' });
+    const tc = trashCostOf(g, it);
+    if (canPay(g, 'runner', tc, 'trash')) {
+      const t = yield choice('runner', `Accessed ${it.card.title}. Trash for ${tc}cr?`,
+        [opt('trash', `Trash (${tc}cr)`), opt('leave', 'Leave it')], { runStep: 'access-trash' });
       if (t === 'trash') {
-        pay(g, 'runner', it.card.trashCost, `trash ${it.card.title}`, 'trash');
+        pay(g, 'runner', tc, `trash ${it.card.title}`, 'trash');
         // Persistent abilities (Strongbox, Red Herrings) survive the trash
         const sc = getScript(it.code)?.stealCost;
         if (sc && s.run && getScript(it.code)?.persistent) s.run.extraStealCosts.push(sc);

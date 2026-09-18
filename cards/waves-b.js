@@ -203,7 +203,7 @@ export function registerWavesB(db) {
     subroutines: [
       { label: 'The Corp gains 2 credits', *resolve(g) { fx.gainCredits(g, 'corp', 2, 'Shadow'); } },
       { label: 'Trace 3 - give the Runner 1 tag', *resolve(g) {
-          if (yield* fx.trace(g, 3, 'Shadow')) fx.addTags(g, 1, 'Shadow');
+          if (yield* fx.trace(g, 3, 'Shadow')) yield* fx.addTags(g, 1, 'Shadow');
       } },
     ],
   });
@@ -270,7 +270,7 @@ export function registerWavesB(db) {
   // Deviation: the "must reveal it while accessing in R&D" clause isn't
   // separately modeled — access is already a logged/visible engine event.
   define(code('TGTBT'), {
-    *onAccess(g) { fx.addTags(g, 1, 'TGTBT'); },
+    *onAccess(g) { yield* fx.addTags(g, 1, 'TGTBT'); },
   });
 
   // 20112 Ghost Branch — advanceable asset; accessed: corp may give the
@@ -282,7 +282,7 @@ export function registerWavesB(db) {
       if (it.advancement <= 0) return;
       const p = yield choice('corp', `Ghost Branch: give the Runner ${it.advancement} tag(s)?`,
         [opt('yes', `Give ${it.advancement} tag(s)`), opt('no', 'Decline')]);
-      if (p === 'yes') fx.addTags(g, it.advancement, 'Ghost Branch');
+      if (p === 'yes') yield* fx.addTags(g, it.advancement, 'Ghost Branch');
     },
   });
 
@@ -295,7 +295,7 @@ export function registerWavesB(db) {
     *onEncounter(g) {
       const p = yield choice('runner', 'Data Raven: take 1 tag or end the run?',
         [opt('tag', 'Take 1 tag'), opt('end', 'End the run')]);
-      if (p === 'tag') fx.addTags(g, 1, 'Data Raven');
+      if (p === 'tag') yield* fx.addTags(g, 1, 'Data Raven');
       else { g.state.run.ended = true; fx.emit(g, 'run-ends-sub', { via: 'Data Raven' }); }
     },
     subroutines: [
@@ -312,7 +312,7 @@ export function registerWavesB(db) {
       req: (g, it) => (it.counters.power ?? 0) > 0,
       *effect(g, { instId }) {
         inst(g, instId).counters.power--;
-        fx.addTags(g, 1, 'Data Raven');
+        yield* fx.addTags(g, 1, 'Data Raven');
       },
     },
   });
@@ -407,7 +407,7 @@ export function registerWavesB(db) {
   define(code('SEA Source'), {
     canPlay(g) { return (g.state.flags.lastRunnerTurn.successfulRuns ?? []).length > 0; },
     *onPlay(g) {
-      if (yield* fx.trace(g, 3, 'SEA Source')) fx.addTags(g, 1, 'SEA Source');
+      if (yield* fx.trace(g, 3, 'SEA Source')) yield* fx.addTags(g, 1, 'SEA Source');
     },
   });
 
@@ -419,7 +419,7 @@ export function registerWavesB(db) {
   define(code('Bernice Mai'), {
     *onRunSuccessfulHere(g, { instId }) {
       const success = yield* fx.trace(g, 5, 'Bernice Mai');
-      if (success) fx.addTags(g, 1, 'Bernice Mai');
+      if (success) yield* fx.addTags(g, 1, 'Bernice Mai');
       else fx.trash(g, instId, 'Bernice Mai');
     },
   });

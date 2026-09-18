@@ -16,6 +16,19 @@ export function gainCredits(g, player, n, why = '') {
   emit(g, 'credits-gained', { who: player, n, why });
 }
 
+// ---- virus counters ----
+// Card scripts that ADD virus counters to a program should call this
+// instead of mutating `it.counters.virus` directly, so Surge ("play only if
+// you placed at least 1 virus counter on a program this turn; place 2 more
+// on that program") can find which program(s) qualify. Tracked on
+// flags.turn (reset every turn start) as a Set of instance ids.
+export function addVirusCounter(g, instId, n = 1, why = '') {
+  const it = inst(g, instId);
+  it.counters.virus = (it.counters.virus ?? 0) + n;
+  emit(g, 'counters-added', { id: instId, n, kind: 'virus', total: it.counters.virus });
+  if (it.card.type === 'program') (g.state.flags.turn.virusProgramsGained ??= new Set()).add(instId);
+}
+
 // purpose: undefined | 'icebreaker' | 'trace' | 'trash' | 'virus-install'
 //          | 'hq-run' | 'remove-tag'  — unlocks matching recurring-credit pools.
 export function canPay(g, player, n, purpose) {
@@ -108,6 +121,9 @@ export function* damage(g, type, n, why = '', { unpreventable = false } = {}) {
       if (n <= 0) break;
       const pd = h.script.preventDamage;
       if (!pd.types.includes(type)) continue;
+      // req (Plascrete Carapace): extra availability gate, e.g. "only while
+      // a hosted counter remains" — checked like any other req().
+      if (pd.req && !pd.req(g, h.it)) continue;
       // perTurn (Muresh Bodysuit): mandatory, auto-applies at most once per
       // turn per source — no prompt, so combine only with auto:true.
       if (pd.perTurn && !oncePerTurn(g, `preventDamage:${h.id}`)) continue;
@@ -115,12 +131,20 @@ export function* damage(g, type, n, why = '', { unpreventable = false } = {}) {
       if (!pd.auto) {
         const p = yield choice('runner',
           `${n} ${type} damage incoming (${why}). Use ${h.it.card.title}?`,
-          [opt('prevent', `${h.it.card.title}: prevent up to ${pd.amount}`), opt('no', 'Take the damage')],
+          [opt('prevent', `${h.it.card.title}: prevent up to ${pd.amount === Infinity ? 'all' : pd.amount}`), opt('no', 'Take the damage')],
           { prevention: true });
         use = p === 'prevent';
       }
       if (use) {
         if (pd.trashSelf) trash(g, h.id, 'prevention');
+        // consumeCounter (Plascrete Carapace): spend 1 hosted counter of the
+        // named kind per use instead of trashing outright; trash once empty.
+        if (pd.consumeCounter) {
+          const it2 = h.it;
+          it2.counters[pd.consumeCounter] = (it2.counters[pd.consumeCounter] ?? 0) - 1;
+          emit(g, 'counters-added', { id: h.id, n: -1, kind: pd.consumeCounter, total: it2.counters[pd.consumeCounter] });
+          if (it2.counters[pd.consumeCounter] <= 0) trash(g, h.id, 'empty');
+        }
         n = Math.max(0, n - pd.amount);
         emit(g, 'damage-prevented', { by: h.it.card.title, remaining: n });
       }
@@ -141,9 +165,31 @@ export function* damage(g, type, n, why = '', { unpreventable = false } = {}) {
 }
 
 // ---- tags / bad publicity ----
-export function addTags(g, n, why = '') {
-  g.state.runner.tags += n;
-  emit(g, 'tags-added', { n, total: g.state.runner.tags, why });
+// Generator: interrupt window for tag prevention (New Angeles City Hall —
+// "2cr: prevent 1 tag"), offered once PER TAG so a partial prevention (ran
+// out of credits partway through a multi-tag gain) works correctly. Script
+// hook: preventTag = {label, req(g,it), effect*(g,{instId})}. When no card
+// has this hook (the overwhelming common case) the for-of finds nothing, no
+// decision is ever yielded, and this behaves exactly like the old plain
+// function — every existing `yield* fx.addTags(...)` call site is safe.
+export function* addTags(g, n, why = '') {
+  let remaining = n;
+  while (remaining > 0) {
+    let prevented = false;
+    for (const h of collect(g, 'preventTag')) {
+      const t = h.script.preventTag;
+      if (!t.req(g, h.it)) continue;
+      const p = yield choice('runner', `${h.it.card.title}: ${t.label}?`,
+        [opt('yes', t.label), opt('no', 'Decline')]);
+      if (p === 'yes') { yield* t.effect(g, { instId: h.id }); prevented = true; break; }
+    }
+    if (!prevented) break;
+    remaining--;
+  }
+  if (remaining > 0) {
+    g.state.runner.tags += remaining;
+    emit(g, 'tags-added', { n: remaining, total: g.state.runner.tags, why });
+  }
 }
 export function removeTag(g, n = 1) {
   g.state.runner.tags = Math.max(0, g.state.runner.tags - n);
@@ -162,6 +208,17 @@ export function removeBadPublicity(g, n = 1) {
 export function* trace(g, base, ctx = '') {
   const c = g.state.corp, r = g.state.runner;
   emit(g, 'trace-start', { base, ctx });
+  // Interrupt window: cards that can reduce/zero the BASE trace strength
+  // before any boosts are chosen (Disrupter — "reduce the base trace
+  // strength of a trace to 0"). Generic hook: script.traceInterrupt =
+  // {label, req(g,it), effect(g,{instId,base}) -> newBase}.
+  for (const h of collect(g, 'traceInterrupt')) {
+    const t = h.script.traceInterrupt;
+    if (!t.req(g, h.it)) continue;
+    const p = yield choice('runner', `${h.it.card.title}: ${t.label}?`,
+      [opt('yes', t.label), opt('no', 'Decline')]);
+    if (p === 'yes') base = yield* t.effect(g, { instId: h.id, base });
+  }
   const cMax = c.credits + poolTotal(g, 'corp', 'trace');
   const cBoost = yield number('corp', `Trace ${base} (${ctx}): boost trace strength? (1cr each)`, 0, cMax, { trace: true });
   pay(g, 'corp', cBoost, 'trace boost', 'trace');
@@ -243,7 +300,11 @@ export function* stealAgendaFx(g, id) {
   const script = getScript(it.code);
   if (script?.onSteal) yield* script.onSteal(g, { instId: id });
   for (const h of collect(g, 'onAgendaStolen')) {
-    if (h.id !== id) yield* h.fn(g, { agendaId: id });
+    // instId: h.id lets a self-referential hook trash/modify itself (New
+    // Angeles City Hall: "when you steal an agenda, trash this resource"),
+    // mirroring onRunSuccessful's instId — Personal Evolution's existing
+    // onAgendaStolen(g) ignores the extra field, so this is backward-safe.
+    if (h.id !== id) yield* h.fn(g, { agendaId: id, instId: h.id });
   }
   checkAgendaWin(g);
 }

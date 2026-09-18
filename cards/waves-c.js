@@ -119,9 +119,7 @@ export function registerWavesC(db) {
         [opt('pay', 'Pay 1cr'), opt('no', 'Decline')]);
       if (p !== 'pay') return;
       fx.pay(g, 'runner', 1, 'Darwin');
-      const it = inst(g, instId);
-      it.counters.virus = (it.counters.virus ?? 0) + 1;
-      fx.emit(g, 'counters-added', { id: instId, n: 1, kind: 'virus', total: it.counters.virus });
+      fx.addVirusCounter(g, instId, 1, 'Darwin');
     },
   });
 
@@ -135,9 +133,7 @@ export function registerWavesC(db) {
   define(code('Datasucker'), {
     *onRunSuccessful(g, { server, instId }) {
       if (!['hq', 'rd', 'archives'].includes(server)) return;
-      const it = inst(g, instId);
-      it.counters.virus = (it.counters.virus ?? 0) + 1;
-      fx.emit(g, 'counters-added', { id: instId, n: 1, kind: 'virus', total: it.counters.virus });
+      fx.addVirusCounter(g, instId, 1, 'Datasucker');
     },
     encounterAbility: {
       req(g, it, iceId) { return (it.counters.virus ?? 0) > 0 && inst(g, iceId).rezzed; },
@@ -163,8 +159,7 @@ export function registerWavesC(db) {
   // hosted virus counter to trash the accessed card.
   define(code('Imp'), {
     *onInstall(g, { instId }) {
-      inst(g, instId).counters.virus = 2;
-      fx.emit(g, 'counters-added', { id: instId, n: 2, kind: 'virus', total: 2 });
+      fx.addVirusCounter(g, instId, 2, 'Imp');
     },
     accessAbility: {
       label: 'Imp: spend a hosted virus counter to trash the accessed card',
@@ -181,9 +176,7 @@ export function registerWavesC(db) {
   // virus counters: the Corp trashes 1 card from HQ (corp chooses).
   define(code('Hemorrhage'), {
     *onRunSuccessful(g, { instId }) {
-      const it = inst(g, instId);
-      it.counters.virus = (it.counters.virus ?? 0) + 1;
-      fx.emit(g, 'counters-added', { id: instId, n: 1, kind: 'virus', total: it.counters.virus });
+      fx.addVirusCounter(g, instId, 1, 'Hemorrhage');
     },
     actions: [{
       label: 'Spend 2 hosted virus counters: the Corp trashes 1 card from HQ',
@@ -381,9 +374,7 @@ export function registerWavesC(db) {
     recurring: { n: (g, it) => it.counters.virus ?? 0, purposes: ['hq-run'] },
     *onRunSuccessful(g, { server, instId }) {
       if (server !== 'hq') return;
-      const it = inst(g, instId);
-      it.counters.virus = (it.counters.virus ?? 0) + 1;
-      fx.emit(g, 'counters-added', { id: instId, n: 1, kind: 'virus', total: it.counters.virus });
+      fx.addVirusCounter(g, instId, 1, 'Pheromones');
     },
   });
 

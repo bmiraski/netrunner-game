@@ -56,6 +56,10 @@ export function modSum(g, hookName, ...args) {
 //   'hq-run','remove-tag']}  — counters.recurring refilled at owner's turn start.
 // Pools auto-spend before real credits (documented simplification).
 export function poolsFor(g, player, purpose) {
+  // purpose may be a single string or an array of acceptable purposes (a
+  // payment can qualify for more than one kind at once — e.g. advancing ice
+  // in Simone Diego's server is both 'advance-ice' AND 'advance-here').
+  const wanted = Array.isArray(purpose) ? purpose : [purpose];
   const pools = [];
   for (const s of hookSources(g)) {
     if (!s.script.recurring) continue;
@@ -70,8 +74,15 @@ export function poolsFor(g, player, purpose) {
     // "Use these credits during runs on HQ" isn't restricted to a payment
     // TYPE, just to WHEN it's spent.
     const hqRunMatch = purposes.includes('hq-run') && g.state.run?.server === 'hq';
+    // 'advance-here' is likewise a CONTEXT purpose (Simone Diego: "advance
+    // cards in the root of or protecting THIS server"): matches when the
+    // advance target (g.state.flags.advanceTargetServer, set by the
+    // 'advance' action) is the same server this upgrade is installed in.
+    const advanceHereMatch = purposes.includes('advance-here')
+      && g.state.flags.turn.advanceTargetServer != null
+      && s.it.zone === `server-content:${g.state.flags.turn.advanceTargetServer}`;
     // restricted pools only apply when the payment declares a matching purpose
-    if (!hqRunMatch && !purposes.includes(purpose)) continue;
+    if (!hqRunMatch && !advanceHereMatch && !wanted.some(p => purposes.includes(p))) continue;
     if ((s.it.counters.recurring ?? 0) > 0) pools.push(s.it);
   }
   return pools;

@@ -153,7 +153,7 @@ export function registerWavesA(db) {
       { label: 'Trace 1 - do 1 core damage and give the Runner 1 tag', *resolve(g) {
           if (yield* fx.trace(g, 1, 'Ichi 1.0')) {
             yield* fx.damage(g, 'core', 1, 'Ichi 1.0');
-            fx.addTags(g, 1, 'Ichi 1.0');
+            yield* fx.addTags(g, 1, 'Ichi 1.0');
           }
       } },
     ],
@@ -300,7 +300,7 @@ export function registerWavesA(db) {
         [opt('pay', 'Pay 4cr'), opt('no', 'Decline')]);
       if (p !== 'pay') return;
       fx.pay(g, 'corp', 4, 'Snare!');
-      fx.addTags(g, 1, 'Snare!');
+      yield* fx.addTags(g, 1, 'Snare!');
       yield* fx.damage(g, 'net', 3, 'Snare!');
     },
   });

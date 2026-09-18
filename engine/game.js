@@ -1,6 +1,6 @@
 // Game driver + turn structure. The rules run as generators that yield
 // decisions; Game pauses on each decision until .choose(answer) is called.
-import { createState, inst, cardOf, moveCard, memoryUsed, memoryLimit, newRemote, serverIds, isCentral } from './state.js';
+import { createState, inst, cardOf, moveCard, memoryUsed, memoryLimit, memoryCostOf, newRemote, serverIds, isCentral } from './state.js';
 import { createDb } from './db.js';
 import { choice, opt, validate } from './decisions.js';
 import * as fx from './effects.js';
@@ -241,7 +241,13 @@ function* corpAction(g) {
     }
     case 'advance': {
       c.clicks--;
-      fx.pay(g, 'corp', 1, 'advance', cardOf(g, id).type === 'ice' ? 'advance-ice' : undefined);
+      // advanceTargetServer: context for the 'advance-here' recurring-pool
+      // purpose (Simone Diego) — set right before paying so poolsFor() can
+      // see which server is being advanced into.
+      const it0 = inst(g, id);
+      s.flags.turn.advanceTargetServer = it0.zone.startsWith('server-') ? it0.zone.split(':')[1] : null;
+      const purpose = cardOf(g, id).type === 'ice' ? ['advance-ice', 'advance-here'] : ['advance-here'];
+      fx.pay(g, 'corp', 1, 'advance', purpose);
       inst(g, id).advancement++;
       fx.emit(g, 'card-advanced', { id, advancement: inst(g, id).advancement });
       break;
@@ -313,6 +319,14 @@ export function* corpInstall(g, handId, { noClick = false, noCost = false } = {}
   it.faceup = false; it.rezzed = false; it.installedTurn = s.turn;
   if (!noClick) s.corp.clicks--;
   fx.emit(g, 'corp-installed', { id: handId, server: sid, type: card.type });
+  // broadcast hook (Amazon Industrial Zone: "whenever you install a piece
+  // of ice protecting this server, you may immediately rez it") — mirrors
+  // Replicator's onHardwareInstalled broadcast above.
+  if (card.type === 'ice') {
+    for (const h of collect(g, 'onIceInstalled')) {
+      yield* h.fn(g, { instId: h.id, iceId: handId, server: sid });
+    }
+  }
   return true;
 }
 
@@ -360,7 +374,21 @@ function* runnerAction(g) {
     }
   }
   if (!s.flags.turn.noMoreRuns) {
-    for (const sid of serverIds(g)) options.push(opt(`run:${sid}`, `Run on ${sid}`));
+    // Jinteki: Replicating Perfection — Runner cannot run on remote
+    // servers, EXCEPT for the rest of this turn once they've run a
+    // central (identity ability, checked generically here rather than as
+    // a per-card hook since it's a run-option filter, not an effect).
+    const corpIdScript = getScript(cardOf(g, s.corp.identity).code);
+    const blockRemotes = corpIdScript?.blocksRemoteRuns
+      && !(s.flags.turn.runsMade ?? []).some(isCentral);
+    for (const sid of serverIds(g)) {
+      if (blockRemotes && !isCentral(sid)) continue;
+      // Ruhr Valley: "as an additional cost to run this server, spend
+      // [click]" — a server-scoped upgrade adds to the run's click cost.
+      const extraClicks = extraRunClickCost(g, sid);
+      if (r.clicks < 1 + extraClicks) continue;
+      options.push(opt(`run:${sid}`, `Run on ${sid}${extraClicks ? ` (+${extraClicks} click)` : ''}`));
+    }
   }
   if (r.tags > 0 && fx.canPay(g, 'runner', 2, 'remove-tag')) options.push(opt('remove-tag', 'Remove 1 tag (2cr)'));
   for (const e of cardActions(g, 'runner')) options.push(opt(e.id, e.label));
@@ -372,7 +400,7 @@ function* runnerAction(g) {
     case 'credit': r.clicks--; fx.gainCredits(g, 'runner', 1, 'click'); break;
     case 'draw': r.clicks--; fx.draw(g, 'runner', 1); break;
     case 'remove-tag': r.clicks--; fx.pay(g, 'runner', 2, 'remove tag', 'remove-tag'); fx.removeTag(g); break;
-    case 'run': r.clicks--; yield* doRun(g, arg); break;
+    case 'run': r.clicks -= 1 + extraRunClickCost(g, arg); yield* doRun(g, arg); break;
     case 'cardact': {
       const entry = cardActions(g, 'runner').find(e => e.id === pick);
       yield* runCardAction(g, 'runner', entry);
@@ -406,7 +434,7 @@ function consoleBlocked(g, card) {
 export function* runnerInstall(g, handId, { noClick = false, noCost = false, discount = 0 } = {}) {
   const s = g.state, card = cardOf(g, handId);
   if (card.type === 'program') {
-    while (memoryUsed(g) + (card.memoryCost ?? 0) > memoryLimit(g)) {
+    while (memoryUsed(g) + memoryCostOf(g, card) > memoryLimit(g)) {
       const progs = s.runner.rig.program.filter(id => !hostedMemoryFree(g, id));
       if (!progs.length) { fx.emit(g, 'install-failed', { id: handId, why: 'MU' }); return false; }
       const pick = yield choice('runner', `Not enough MU for ${card.title}. Trash a program?`,
@@ -443,6 +471,15 @@ export function* runnerInstall(g, handId, { noClick = false, noCost = false, dis
     }
   }
   if (script?.onInstall) yield* script.onInstall(g, { instId: handId });
+  // broadcast hook (Replicator: "whenever you install a piece of hardware,
+  // including Replicator") — mirrors onIceRezzed's broadcast pattern.
+  // Collected AFTER moveCard/onInstall above, so a just-installed Replicator
+  // is already live and sees its own install too.
+  if (card.type === 'hardware') {
+    for (const h of collect(g, 'onHardwareInstalled')) {
+      yield* h.fn(g, { instId: h.id, installedId: handId });
+    }
+  }
   return true;
 }
 function hostedMemoryFree(g, id) {
@@ -452,6 +489,19 @@ function hostedMemoryFree(g, id) {
 }
 
 // ---------- shared helpers ----------
+// Ruhr Valley: sum of extraRunClicks from every REZZED upgrade installed in
+// sid (an install-time-content hook, like other server-scoped upgrade
+// abilities — e.g. Bernice Mai's onRunSuccessfulHere — which all require
+// the upgrade to be rezzed to function).
+function extraRunClickCost(g, sid) {
+  let n = 0;
+  for (const id of g.state.corp.servers[sid]?.content ?? []) {
+    const it = inst(g, id);
+    if (!it.rezzed) continue;
+    n += getScript(it.card.code)?.extraRunClicks ?? 0;
+  }
+  return n;
+}
 function hasAgendaOrAsset(g, sid) {
   return g.state.corp.servers[sid].content
     .some(id => ['agenda', 'asset'].includes(cardOf(g, id).type));

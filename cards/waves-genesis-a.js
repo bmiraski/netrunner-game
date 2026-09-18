@@ -36,7 +36,7 @@ export function registerWavesGenesisA(db) {
       label: '[click]: Trace 2 — if successful, give the Runner 1 tag',
       clicks: 1,
       *effect(g) {
-        if (yield* fx.trace(g, 2, 'Restructured Datapool')) fx.addTags(g, 1, 'Restructured Datapool');
+        if (yield* fx.trace(g, 2, 'Restructured Datapool')) yield* fx.addTags(g, 1, 'Restructured Datapool');
       },
     }],
   });
@@ -44,7 +44,7 @@ export function registerWavesGenesisA(db) {
   // 02035 Big Brother — play only if the Runner is tagged; give 2 tags.
   define(code('Big Brother'), {
     canPlay(g) { return g.state.runner.tags > 0; },
-    *onPlay(g) { fx.addTags(g, 2, 'Big Brother'); },
+    *onPlay(g) { yield* fx.addTags(g, 2, 'Big Brother'); },
   });
 
   // 02040 Freelancer — play only if the Runner is tagged; trash up to 2
@@ -272,7 +272,7 @@ export function registerWavesGenesisA(db) {
       const it = inst(g, instId);
       if (!it.counters.joshuaPending) return;
       it.counters.joshuaPending = 0;
-      fx.addTags(g, 1, 'Joshua B.');
+      yield* fx.addTags(g, 1, 'Joshua B.');
     },
   });
 

@@ -91,6 +91,11 @@ export function createState(db, cfg) {
       tags: 0, brainDamage: 0, baseHandSize: 5, baseMemory: 4,
       baseLink: db.card(cfg.runner.identity).baseLink ?? 0,
       rig: { program: [], hardware: [], resource: [] },
+      // Cards hosted-but-not-installed (Personal Workshop): distinct from
+      // `rig` because they don't count as installed (no MU cost, no
+      // uniqueness/install triggers) until their power counters hit 0 and
+      // they move into the rig via a normal runnerInstall() call.
+      hosted: [],
     },
   };
 
@@ -113,6 +118,7 @@ export function zoneList(g, zone) {
     'rig-program': state.runner.rig.program,
     'rig-hardware': state.runner.rig.hardware,
     'rig-resource': state.runner.rig.resource,
+    'runner-hosted': state.runner.hosted,
   };
   if (m[zone]) return m[zone];
   const sm = zone.match(/^server-(ice|content):(.+)$/);
@@ -146,6 +152,15 @@ export function moveCard(g, id, toZone, opts = {}) {
   return it;
 }
 
+// A script's memoryCostOverride(g) => number lets a card's effective MU
+// cost depend on live game state (ZU.13 Key Master / Creeper: 0 MU — even
+// while still in the grip — with 2+ link) instead of the flat printed
+// `card.memoryCost`. Takes `g` only (no instance): must work identically
+// before and after install, per the printed "even if it is not installed."
+export function memoryCostOf(g, card) {
+  const script = getScript(card.code);
+  return script?.memoryCostOverride ? script.memoryCostOverride(g) : (card.memoryCost ?? 0);
+}
 export function memoryUsed(g) {
   return g.state.runner.rig.program.reduce((s, id) => {
     const it = inst(g, id);
@@ -153,7 +168,7 @@ export function memoryUsed(g) {
       const hostScript = getScript(inst(g, it.hostId).code);
       if (hostScript?.hostedMemoryFree) return s; // Dinosaurus
     }
-    return s + (it.card.memoryCost ?? 0);
+    return s + memoryCostOf(g, it.card);
   }, 0);
 }
 export function memoryLimit(g) {

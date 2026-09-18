@@ -2,7 +2,8 @@
 
 Status: `done` (scripted + tested), `pilot` (in cards/pilots.js), `pending`.
 Simplifications MUST be noted here. Wave files: cards/waves-<a|b|c|d>.js (Revised
-Core), cards/waves-genesis-<a|b|c>.js (Genesis Cycle, planned).
+Core), cards/waves-genesis-<a|b|c>.js (Genesis Cycle -- all three waves scripted
+and tested; net-new cards below are now all `done`).
 
 ## Batch A (HB + Jinteki) — 32 cards
 
@@ -187,12 +188,12 @@ are now implemented at the engine level (card scripting itself is Wave C):
 |------|-------|------|--------|-------|
 | 02001 | Whizzard: Master Gamer | identity | done | Genesis wave A. Recurring credit pool restricted to trash-cost purpose. |
 | 02005 | Cortez Chip | hardware | done | Genesis wave A. New `rezCostBumps` engine primitive (targeted, until-end-of-turn rez cost increase). |
-| 02007 | ZU.13 Key Master | program | pending |  |
-| 02008 | The Helpful AI | resource | pending |  |
-| 02009 | Plascrete Carapace | hardware | pending |  |
+| 02007 | ZU.13 Key Master | program | done | Genesis wave C. Code gate icebreaker; 0 MU with 2+ link via `memoryCostOverride` (even in the grip). |
+| 02008 | The Helpful AI | resource | done | Genesis wave C. +1 link (`linkBonus`); [trash]: +2 strength on a chosen icebreaker until end of turn. |
+| 02009 | Plascrete Carapace | hardware | done | Genesis wave C. onInstall loads 4 power counters; `preventDamage` with `consumeCounter` (1 meat damage per counter, trashed when empty). |
 | 02011 | Mandatory Upgrades | agenda | done | Genesis wave A. onTurnStart +1 click. |
 | 02012 | Janus 1.0 | ice | done | Genesis wave B. Bioroid sentry: 4x "do 1 core damage" (unbroken, per printed clickBreak pattern already used elsewhere). |
-| 02015 | Snowflake | ice | pending | Needs Psi-game engine primitive (dedicated engine work, not a normal wave). |
+| 02015 | Snowflake | ice | done | Genesis wave C. Psi game (`fx.psiGame()`); different bets end the run. |
 | 02016 | Restructured Datapool | agenda | done | Genesis wave A. [click] trace2 -> tag action. |
 | 02017 | TMI | ice | done | Genesis wave B. onRez trace 2 — failure derezzes it (new 'rez-ice' pay purpose + fx.derez on trace failure). Sub: end the run. |
 | 02020 | Dracō | ice | done | Genesis wave B. onRez: pay X for X power counters (+X strength). Sub: trace 2 -> 1 tag, end the run. |
@@ -201,20 +202,20 @@ are now implemented at the engine level (card scripting itself is Wave C):
 
 | Code | Title | Type | Status | Notes |
 |------|-------|------|--------|-------|
-| 02021 | Vamp | event | pending |  |
+| 02021 | Vamp | event | done | Genesis wave C. Run HQ; on success, instead of breaching, spend X credits to make the Corp lose X (own `doRun` replacement effect); if any spent, take 1 tag. |
 | 02023 | Satellite Uplink | event | done | Genesis wave A. Expose up to 2 (stop-early loop). |
-| 02024 | e3 Feedback Implants | hardware | pending |  |
+| 02024 | e3 Feedback Implants | hardware | done | Genesis wave C. Generic `onSubBroken` hook fired after every individual break; pay 1cr to break 1 more sub on the same ice (re-enters via exported `fireSubBroken()`). |
 | 02025 | Compromised Employee | resource | done | Genesis wave A. New `onIceRezzed` broadcast hook (any card can react to any ice being rezzed, distinct from the ice's own onRez). |
-| 02027 | Snowball | program | pending |  |
-| 02029 | Encryption Protocol | asset | pending |  |
+| 02027 | Snowball | program | done | Genesis wave C. Fracter; `selfBoostOnBreak` (+1 strength for the remainder of the run each time it breaks a sub). |
+| 02029 | Encryption Protocol | asset | done | Genesis wave C. New `trashCostMod` hook: +1 trash cost to all installed cards (including itself) while rezzed. |
 | 02030 | Sherlock 1.0 | ice | done | Genesis wave B. Bioroid sentry: 2x trace 4 -> move an installed Runner program to the top of the stack (moveCard to runner-deck position:'top'). |
-| 02031 | Jinteki: Replicating Perfection | identity | pending |  |
+| 02031 | Jinteki: Replicating Perfection | identity | done | Genesis wave C. Cannot run remote servers until a central server has been run this turn (identity-level run-legality check). |
 | 02032 | Fetal AI | agenda | done | Genesis wave B. New per-agenda `stealCost` field (stealDecision now also reads the accessed agenda's own stealCost, not just server upgrades/persistent extras): as an additional cost to steal, the Runner pays 2cr. onAccess: 2 net damage unless accessed from Archives. |
-| 02034 | Sensei | ice | pending |  |
+| 02034 | Sensei | ice | done | Genesis wave C. onEncounter: other ice gains a synthetic "end the run" subroutine for the remainder of the run. |
 | 02035 | Big Brother | operation | done | Genesis wave A. canPlay-if-tagged gate, +2 tags. |
-| 02036 | ChiLo City Grid | upgrade | pending | Needs Region upgrade-limit mechanic. |
+| 02036 | ChiLo City Grid | upgrade | done | Genesis wave C. Region. A successful trace during a run on its server gives the Runner a tag. |
 | 02037 | Power Grid Overload | operation | done | Genesis wave B. Playable only after a successful run last turn (`lastRunnerTurn.successfulRuns` canPlay gate). Trace 2 -> trash a piece of hardware costing <= the trace margin. |
-| 02038 | Amazon Industrial Zone | upgrade | pending | Needs Region upgrade-limit mechanic. |
+| 02038 | Amazon Industrial Zone | upgrade | done | Genesis wave C. Region. May immediately rez a newly-installed piece of ice in its server for 3cr less (new `onIceInstalled` broadcast hook; discount applied via `rezCostBumps`). |
 | 02039 | Executive Retreat | agenda | done | Genesis wave A. onScore agenda counter + shuffle HQ into R&D; action consumes counter to draw 5. |
 | 02040 | Freelancer | operation | done | Genesis wave A. canPlay-if-tagged gate; trash up to 2 resources loop. |
 
@@ -222,15 +223,15 @@ are now implemented at the engine level (card scripting itself is Wave C):
 
 | Code | Title | Type | Status | Notes |
 |------|-------|------|--------|-------|
-| 02041 | Nerve Agent | program | pending |  |
+| 02041 | Nerve Agent | program | done | Genesis wave C. Virus program: successful run on HQ places 1 virus counter; on breach, choose a number less than hosted counters to access that many additional cards. |
 | 02042 | Joshua B. | resource | done | Genesis wave A. onTurnStart optional +1 click (deferred counter); onTurnEnd consumes it for +1 tag. |
-| 02044 | Muresh Bodysuit | hardware | pending |  |
-| 02045 | Snitch | program | pending |  |
-| 02049 | Personal Workshop | resource | pending |  |
+| 02044 | Muresh Bodysuit | hardware | done | Genesis wave C. `preventDamage` with `auto` + `perTurn`: the first meat damage each turn is prevented for free. |
+| 02045 | Snitch | program | done | Genesis wave C. New `approachAbility` hook: once per run, may expose an unrezzed approached ice, then may jack out. |
+| 02049 | Personal Workshop | resource | done | Genesis wave C. New `runner-hosted` zone: hosts a program/hardware from the grip with power counters = install cost; decremented by a paid action or automatically at onTurnStart; auto-installs at 0. |
 | 02050 | Public Sympathy | resource | done | Genesis wave A. New `handSizeMod` engine hook (per-installed-card max-hand-size modifier). |
 | 02052 | Viper | ice | done | Genesis wave B. Code gate: "the Runner loses [click], if able"; trace 3 -> end the run. |
 | 02053 | Edge of World | asset | done | Genesis wave B. onAccess: corp may pay 3cr for 1 core damage per piece of ice protecting the server. |
-| 02054 | Sunset | operation | pending |  |
+| 02054 | Sunset | operation | done | Genesis wave C. onPlay: rearrange the ice protecting a chosen server. |
 | 02055 | Marked Accounts | asset | done | Genesis wave A. onTurnStart take 1cr if able; action loads 3cr. |
 | 02057 | Woodcutter | ice | done | Genesis wave B. Advanceable (unconditionally, matching the existing Shadow/Hadrian's Wall precedent — this engine restricts ice rez to the run-approach window, so a rez-gated `advanceable` can't be satisfied outside a run); gains "do 1 net damage" per hosted advancement counter (new `activeSubIndices` dynamic-subroutine-count hook, shared with Tyrant/Salvage). |
 | 02058 | Commercialization | operation | done | Genesis wave A. onPlay: pick ice, gain 1cr per advancement token. |
@@ -241,37 +242,37 @@ are now implemented at the engine level (card scripting itself is Wave C):
 
 | Code | Title | Type | Status | Notes |
 |------|-------|------|--------|-------|
-| 02061 | Disrupter | program | pending |  |
-| 02065 | Crescentus | program | pending |  |
-| 02066 | Deus X | program | pending |  |
+| 02061 | Disrupter | program | done | Genesis wave C. New `traceInterrupt` hook: [trash] to reduce the base strength of a trace to 0. |
+| 02065 | Crescentus | program | done | Genesis wave C. `encounterAbility` (Datasucker-style): [trash] to derez a piece of ice you fully broke during this encounter. |
+| 02066 | Deus X | program | done | Genesis wave C. AI icebreaker; `breaker.breakCost.trashSelf` (interface -> trash: break any number of AP subs) and `preventDamage` with `trashSelf` (interrupt -> trash: prevent any amount of net damage). |
 | 02068 | Inside Man | resource | done | Genesis wave A. New `'install-hardware'` recurring-pool purpose string (recurring credits usable to reduce hardware install cost). |
 | 02071 | Hourglass | ice | done | Genesis wave B. Code gate: 3x "the Runner loses [click], if able." |
 | 02072 | Dedicated Server | asset | done | Genesis wave B. Recurring 2cr, usable for the new 'rez-ice' payment purpose. |
-| 02073 | Bullfrog | ice | pending | Needs Psi-game engine primitive (dedicated engine work, not a normal wave). |
+| 02073 | Bullfrog | ice | done | Genesis wave C. Psi game; different bets relocate it (and the run) to the outermost position of another server (`s.run.redirect`). |
 | 02074 | Uroboros | ice | done | Genesis wave B. Sentry: trace 4 -> Runner cannot make another run this turn (new `noMoreRuns` turn flag); trace 4 -> end the run. |
 | 02075 | Net Police | asset | done | Genesis wave B. Recurring credits equal to the Runner's link, usable during traces ('trace' payment purpose). |
 | 02076 | Weyland Consortium: Because We Built It | identity | done | Genesis wave A. New `'advance-ice'` recurring-pool purpose string (recurring credits usable to pay ice-advance costs). |
 | 02077 | Government Contracts | agenda | done | Genesis wave A. [click][click] -> +4cr. |
 | 02078 | Tyrant | ice | done | Genesis wave B. Advanceable (unconditionally; see Woodcutter note); gains "end the run" per hosted advancement counter. |
-| 02079 | Oversight AI | operation | pending |  |
+| 02079 | Oversight AI | operation | done | Genesis wave C. onPlay: rez a piece of ice for free; new `ice.trashIfFullyBroken` instance flag trashes it once every subroutine is broken in a single encounter. |
 
 ### Humanity's Shadow (hs) -- 14 net-new cards
 
 | Code | Title | Type | Status | Notes |
 |------|-------|------|--------|-------|
-| 02081 | Surge | event | pending |  |
+| 02081 | Surge | event | done | Genesis wave C. Playable only if you placed a virus counter on an installed program this turn (`flags.turn.virusProgramsGained`); places 2 more on it. |
 | 02083 | Andromeda: Dispossessed Ristie | identity | done | Genesis wave A (8th precon identity target). New `startingHandSize` per-identity override (default 5; Andromeda draws 9), consulted for both the opening draw and any mulligan redraw. |
 | 02084 | Networking | event | done | Genesis wave A. New `skipAutoDiscard` one-off instance flag (lets an event's own onPlay opt out of the runner action loop's normal post-play auto-discard). |
 | 02087 | Quality Time | event | done | Genesis wave A. onPlay draw 5. |
-| 02088 | Replicator | hardware | pending |  |
-| 02089 | Creeper | program | pending |  |
-| 02090 | Kraken | event | pending |  |
+| 02088 | Replicator | hardware | done | Genesis wave C. New `onHardwareInstalled` broadcast hook: installing a piece of hardware may search the stack for another copy and add it to the grip. |
+| 02089 | Creeper | program | done | Genesis wave C. Sentry icebreaker; 0 MU with 2+ link via the same `memoryCostOverride` as ZU.13 Key Master. |
+| 02090 | Kraken | event | done | Genesis wave C. Playable only if you stole an agenda this turn (`flags.turn.stolen`); choose a server, the Corp trashes 1 piece of ice protecting it. |
 | 02091 | Kati Jones | resource | done | Genesis wave B. Actions: gain 3cr, or store 3cr per turn / take it all later — both gated by a single shared `oncePerTurn` key so only one may be used per turn. |
 | 02092 | Eve Campaign | asset | done | Genesis wave A. onRez loads 16cr; onTurnStart takes 2cr; trashes when empty. |
 | 02093 | Rework | operation | done | Genesis wave A. onPlay: pick HQ card, shuffle into R&D. |
 | 02096 | Data Hound | ice | done | Genesis wave B. Sentry: trace 2 -> look at the top X cards of the stack (X = trace margin, new `lastTraceMargin` trace() output), trash 1, arrange the rest on top. |
 | 02098 | Salvage | ice | done | Genesis wave B. Advanceable (unconditionally; see Woodcutter note); gains "trace 2 -> 1 tag" per hosted advancement counter. |
-| 02099 | Simone Diego | upgrade | pending |  |
+| 02099 | Simone Diego | upgrade | done | Genesis wave C. Sysop upgrade. 2 recurring credits usable to advance cards in the root of, or protecting, its server (new 'advance-here' context purpose). |
 | 02100 | Foxfire | operation | done | Genesis wave B. Trace 7 -> trash 1 Virtual or Link-subtype card. |
 
 ### Future Proof (fp) -- 11 net-new cards
@@ -281,10 +282,10 @@ are now implemented at the engine level (card scripting itself is Wave C):
 | 02103 | Data Leak Reversal | resource | done | Genesis wave B. New `canInstall(g)` hook (mirrors the existing event `canPlay` gate): installable only after a successful run on a central server this turn. Tagged-only click action trashes the top card of R&D. |
 | 02107 | R&D Interface | hardware | done | Genesis wave B. New `rdAccessMod` hook: breaching R&D accesses 1 additional card. |
 | 02108 | Deep Thought | program | done | Genesis wave B. Places a virus counter on a successful R&D run (`onRunSuccessful`, which fires only after the run's jack-out decision and any content rez/access window resolve); at 3+ counters, offers to peek at the top of R&D at turn start (new `card-peeked` log event, viewer-masked for the corp). |
-| 02109 | New Angeles City Hall | resource | pending |  |
+| 02109 | New Angeles City Hall | resource | done | Genesis wave C. Unique. New `preventTag` generator hook + `fx.addTags()` as a generator: interrupt -> 2cr: prevent 1 tag; onAgendaStolen (now also passed `instId`) trashes itself when you steal an agenda. |
 | 02110 | Eli 1.0 | ice | done | Genesis wave B. Bioroid barrier: 2x end the run. |
-| 02111 | Ruhr Valley | upgrade | pending | Needs Region upgrade-limit mechanic. |
-| 02113 | Midori | upgrade | pending |  |
+| 02111 | Ruhr Valley | upgrade | done | Genesis wave C. Region. New `extraRunClickCost()` hook: running its server costs an extra [click]. |
+| 02113 | Midori | upgrade | done | Genesis wave C. New `approachAbility` hook (shared with Snitch): may swap the approached ice protecting its own server for one installed unrezzed from HQ; Runner may then jack out. |
 | 02114 | NBN: The World is Yours | identity | done | Genesis wave A. Uses the new `handSizeMod` engine hook (see Public Sympathy, 02050) at the identity level. |
 | 02116 | Midseason Replacements | operation | done | Genesis wave B. Playable only if the Runner stole an agenda last turn (`lastRunnerTurn.stolenPoints` canPlay gate). Trace 6 -> the Runner takes tags equal to the trace margin. |
 | 02119 | Burke Bugs | ice | done | Genesis wave B. Sentry: trace 0 -> the Runner trashes 1 program (their own choice, per the engine's default rule for self-affecting effects). |

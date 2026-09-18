@@ -38,7 +38,7 @@ export function registerPilots(db) {
   define(code('Hunter'), {
     subroutines: [
       { label: 'Trace 3 - give the Runner 1 tag', *resolve(g) {
-          if (yield* fx.trace(g, 3, 'Hunter')) fx.addTags(g, 1, 'Hunter');
+          if (yield* fx.trace(g, 3, 'Hunter')) yield* fx.addTags(g, 1, 'Hunter');
       } },
     ],
   });

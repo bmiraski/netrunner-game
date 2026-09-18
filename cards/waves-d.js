@@ -247,9 +247,7 @@ export function registerWavesD(db) {
       label: 'Place 1 virus counter on Crypsis',
       clicks: 1,
       *effect(g, { instId }) {
-        const it = inst(g, instId);
-        it.counters.virus = (it.counters.virus ?? 0) + 1;
-        fx.emit(g, 'counters-added', { id: instId, n: 1, kind: 'virus', total: it.counters.virus });
+        fx.addVirusCounter(g, instId, 1, 'Crypsis');
       },
     }],
     *onEncounterEndIfUsed(g, { instId }) {

@@ -99,7 +99,7 @@ export function registerWavesGenesisB(db) {
       label: 'Trace 2 - give the Runner 1 tag and end the run',
       *resolve(g) {
         if (yield* fx.trace(g, 2, 'Dracō')) {
-          fx.addTags(g, 1, 'Dracō');
+          yield* fx.addTags(g, 1, 'Dracō');
           g.state.run.ended = true;
           fx.emit(g, 'run-ends-sub', {});
         }
@@ -235,7 +235,7 @@ export function registerWavesGenesisB(db) {
     activeSubIndices: advancedSubIndices,
     subroutines: Array(8).fill({
       label: 'Trace 2 - give the Runner 1 tag',
-      *resolve(g) { if (yield* fx.trace(g, 2, 'Salvage')) fx.addTags(g, 1, 'Salvage'); },
+      *resolve(g) { if (yield* fx.trace(g, 2, 'Salvage')) yield* fx.addTags(g, 1, 'Salvage'); },
     }),
   });
 
@@ -300,7 +300,7 @@ export function registerWavesGenesisB(db) {
     *onPlay(g) {
       if (yield* fx.trace(g, 6, 'Midseason Replacements')) {
         const x = g.state.flags.lastTraceMargin;
-        if (x > 0) fx.addTags(g, x, 'Midseason Replacements');
+        if (x > 0) yield* fx.addTags(g, x, 'Midseason Replacements');
       }
     },
   });
@@ -403,9 +403,7 @@ export function registerWavesGenesisB(db) {
   define(code('Deep Thought'), {
     *onRunSuccessful(g, { instId, server }) {
       if (server !== 'rd') return;
-      const it = inst(g, instId);
-      it.counters.virus = (it.counters.virus ?? 0) + 1;
-      fx.emit(g, 'counters-added', { id: instId, n: 1, kind: 'virus', total: it.counters.virus });
+      fx.addVirusCounter(g, instId, 1, 'Deep Thought');
     },
     *onTurnStart(g, { instId }) {
       const it = inst(g, instId);
