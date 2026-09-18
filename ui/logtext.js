@@ -49,7 +49,12 @@ export function eventText(ev, g, viewer) {
     },
     'advancement-moved': () => `${d.n} advancement moved from ${t(d.from)} to ${t(d.to)}.`,
     'tinkered':       () => `Tinkering rewrites ${t(d.iceId)}.`,
+    'chimera-typed':  () => `Chimera becomes a ${d.type.replace('-', ' ')} until derezzed.`,
     'femme-target-chosen': () => `Femme Fatale targets ${t(d.iceId)}.`,
+    'no-more-runs':   () => `Runner cannot make another run this turn.`,
+    'card-peeked':    () => viewer === 'corp'
+      ? `Runner looks at the top card of R&D.`
+      : `Runner looks at the top card of R&D: ${d.title}.`,
     // --- runs / ice ---
     'run-start':      () => ({ text: `Runner runs ${serverName(d.server)}${d.bpCredits ? ` (+${d.bpCredits} BP credits)` : ''}.`, cls: 'log-run' }),
     'approach-ice':   () => `Approaching ${d.rezzed ? d.title : 'unrezzed ice'} (position ${d.position + 1}).`,

@@ -97,6 +97,15 @@ function* endOfTurn(g, player) {
       fx.emit(g, 'card-returned-to-stack', { id, title: it.card.title });
     }
   }
+  // Generic "derez at the end of a turn" instance flag (Chimera): unlike
+  // onTurnEnd hooks (gated to the card's own side's turn, above), Chimera's
+  // "when a turn ends, derez Chimera" fires at the end of ANY turn — it's
+  // normally rezzed mid-run on the runner's turn, so this check is
+  // unconditional on `player` and self-clears by derezzing.
+  for (const id of installedCorp(g)) {
+    const it = inst(g, id);
+    if (it.rezzed && it.derezAtTurnEnd) fx.derez(g, id);
+  }
 }
 
 // ---------- CORP ----------
@@ -197,7 +206,8 @@ function* corpAction(g) {
   }
   for (const id of installedCorp(g)) {
     const it = inst(g, id);
-    const advanceable = it.card.type === 'agenda' || getScript(it.code)?.advanceable;
+    const av = getScript(it.code)?.advanceable;
+    const advanceable = it.card.type === 'agenda' || (typeof av === 'function' ? av(g, it) : av);
     if (advanceable && fx.canPay(g, 'corp', 1)) {
       options.push(opt(`advance:${id}`, `Advance ${it.faceup ? it.card.title : 'card'} in ${serverOf(it)} (1cr) [${it.advancement}]`));
     }
@@ -334,12 +344,15 @@ function* runnerAction(g) {
         options.push(opt(`play:${id}`, `Play ${card.title} (${card.cost}cr${extraClicks ? ', extra click' : ''})`));
       }
     } else if (['program', 'hardware', 'resource'].includes(card.type)) {
-      if (fx.canPay(g, 'runner', card.cost ?? 0) && !consoleBlocked(g, card)) {
+      const script = getScript(card.code);
+      if (fx.canPay(g, 'runner', card.cost ?? 0) && !consoleBlocked(g, card) && (script?.canInstall?.(g) ?? true)) {
         options.push(opt(`install:${id}`, `Install ${card.title} (${card.cost}cr)`));
       }
     }
   }
-  for (const sid of serverIds(g)) options.push(opt(`run:${sid}`, `Run on ${sid}`));
+  if (!s.flags.turn.noMoreRuns) {
+    for (const sid of serverIds(g)) options.push(opt(`run:${sid}`, `Run on ${sid}`));
+  }
   if (r.tags > 0 && fx.canPay(g, 'runner', 2, 'remove-tag')) options.push(opt('remove-tag', 'Remove 1 tag (2cr)'));
   for (const e of cardActions(g, 'runner')) options.push(opt(e.id, e.label));
 

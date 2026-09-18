@@ -38,7 +38,8 @@ export function registerWavesB(db) {
   function advanceableInstalledIds(g) {
     return installedCorp(g).filter(id => {
       const it = inst(g, id);
-      return it.card.type === 'agenda' || getScript(it.code)?.advanceable;
+      const av = getScript(it.code)?.advanceable;
+      return it.card.type === 'agenda' || (typeof av === 'function' ? av(g, it) : av);
     });
   }
 

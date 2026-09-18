@@ -429,8 +429,11 @@ export function* accessCard(g, id, sid) {
 function* stealDecision(g, id, sid) {
   const s = g.state;
   const it = inst(g, id);
-  // additional steal costs (Strongbox click, Red Herrings 5cr; persistent)
+  // additional steal costs (Strongbox click, Red Herrings 5cr; persistent),
+  // plus the agenda's own printed cost (Fetal AI: pay 2cr to steal).
   const costs = [];
+  const ownCost = getScript(it.code)?.stealCost;
+  if (ownCost) costs.push(ownCost);
   const inServer = sid && s.corp.servers[sid] ? s.corp.servers[sid].content : [];
   for (const uid of inServer) {
     const u = inst(g, uid);

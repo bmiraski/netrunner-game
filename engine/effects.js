@@ -3,7 +3,7 @@
 import { inst, cardOf, moveCard, handSize, handSizeRaw } from './state.js';
 import { choice, opt, number } from './decisions.js';
 import { getScript } from '../cards/registry.js';
-import { poolsFor, poolTotal, collect, modSum } from './hooks.js';
+import { poolsFor, poolTotal, collect, modSum, oncePerTurn } from './hooks.js';
 
 const emit = (g, type, data) =>
   g.log.emit(type, data, { turn: g.state.turn, player: g.state.activePlayer });
@@ -108,11 +108,18 @@ export function* damage(g, type, n, why = '', { unpreventable = false } = {}) {
       if (n <= 0) break;
       const pd = h.script.preventDamage;
       if (!pd.types.includes(type)) continue;
-      const p = yield choice('runner',
-        `${n} ${type} damage incoming (${why}). Use ${h.it.card.title}?`,
-        [opt('prevent', `${h.it.card.title}: prevent up to ${pd.amount}`), opt('no', 'Take the damage')],
-        { prevention: true });
-      if (p === 'prevent') {
+      // perTurn (Muresh Bodysuit): mandatory, auto-applies at most once per
+      // turn per source — no prompt, so combine only with auto:true.
+      if (pd.perTurn && !oncePerTurn(g, `preventDamage:${h.id}`)) continue;
+      let use = pd.auto;
+      if (!pd.auto) {
+        const p = yield choice('runner',
+          `${n} ${type} damage incoming (${why}). Use ${h.it.card.title}?`,
+          [opt('prevent', `${h.it.card.title}: prevent up to ${pd.amount}`), opt('no', 'Take the damage')],
+          { prevention: true });
+        use = p === 'prevent';
+      }
+      if (use) {
         if (pd.trashSelf) trash(g, h.id, 'prevention');
         n = Math.max(0, n - pd.amount);
         emit(g, 'damage-prevented', { by: h.it.card.title, remaining: n });
@@ -167,6 +174,12 @@ export function* trace(g, base, ctx = '') {
   // (Rules Reference: "If the link strength is equal to or greater than the
   // trace strength, then the trace is unsuccessful").
   const success = ts > link;
+  // Margin (trace strength above link), for effects sized by "the amount by
+  // which your trace strength exceeded the Runner's link strength" (Power
+  // Grid Overload, Data Hound, Midseason Replacements, ...). Transient —
+  // read it immediately after the yield* fx.trace(...) call that set it,
+  // before any other trace can run.
+  g.state.flags.lastTraceMargin = Math.max(0, ts - link);
   emit(g, 'trace-result', { ts, link, success, ctx });
   for (const h of collect(g, 'onTraceResolved')) {
     yield* h.fn(g, { success, instId: h.id, ctx });
@@ -241,7 +254,7 @@ export function rezCost(g, id) {
 }
 export function* rezFx(g, id, { ignoreCost = false } = {}) {
   const it = inst(g, id);
-  if (!ignoreCost) pay(g, 'corp', rezCost(g, id), `rez ${it.card.title}`);
+  if (!ignoreCost) pay(g, 'corp', rezCost(g, id), `rez ${it.card.title}`, it.card.type === 'ice' ? 'rez-ice' : undefined);
   it.rezzed = true; it.faceup = true;
   if (it.card.type === 'ice') g.state.flags.turn.iceRezzed = (g.state.flags.turn.iceRezzed ?? 0) + 1;
   emit(g, it.card.type === 'ice' ? 'ice-rezzed' : 'card-rezzed', { id, code: it.code, title: it.card.title });
