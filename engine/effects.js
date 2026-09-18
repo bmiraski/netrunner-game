@@ -232,7 +232,12 @@ export function win(g, player, reason) {
 // ---- rez / derez / expose ----
 export function rezCost(g, id) {
   const it = inst(g, id);
-  return Math.max(0, (it.card.cost ?? 0) + modSum(g, 'rezCostMod', it));
+  // rezCostBumps: targeted, until-end-of-turn rez cost increases on a
+  // specific instance (Cortez Chip) — stored on flags.turn so it clears
+  // automatically at the next turn boundary, since the card that set it
+  // (trashed to pay its own cost) is no longer a live hook source.
+  const bump = g.state.flags.turn.rezCostBumps?.[id] ?? 0;
+  return Math.max(0, (it.card.cost ?? 0) + modSum(g, 'rezCostMod', it) + bump);
 }
 export function* rezFx(g, id, { ignoreCost = false } = {}) {
   const it = inst(g, id);
@@ -242,6 +247,12 @@ export function* rezFx(g, id, { ignoreCost = false } = {}) {
   emit(g, it.card.type === 'ice' ? 'ice-rezzed' : 'card-rezzed', { id, code: it.code, title: it.card.title });
   const script = getScript(it.code);
   if (script?.onRez) yield* script.onRez(g, { instId: id });
+  if (it.card.type === 'ice') {
+    // broadcast hook: any OTHER card reacting to a piece of ice being rezzed
+    // (Compromised Employee). Distinct from onRez, which only fires for the
+    // ice's own script.
+    for (const h of collect(g, 'onIceRezzed')) yield* h.fn(g, { iceId: id });
+  }
 }
 export function derez(g, id) {
   const it = inst(g, id);

@@ -34,15 +34,20 @@ export class Game {
 
 function* mainLoop(g) {
   const s = g.state;
-  fx.draw(g, 'corp', 5); fx.draw(g, 'runner', 5);
+  // startingHandSize: per-identity override of the printed 5-card opening
+  // hand (Andromeda: Dispossessed Ristie draws 9) — applies to both the
+  // initial draw and a mulligan's redraw.
+  const startingHandSize = p => getScript(cardOf(g, s[p].identity).code)?.startingHandSize ?? 5;
+  fx.draw(g, 'corp', startingHandSize('corp')); fx.draw(g, 'runner', startingHandSize('runner'));
   for (const p of ['corp', 'runner']) {
+    const n = startingHandSize(p);
     const m = yield choice(p, 'Keep this starting hand?',
-      [opt('keep', 'Keep'), opt('mulligan', 'Mulligan (shuffle back, draw 5)')], { setup: true });
+      [opt('keep', 'Keep'), opt('mulligan', `Mulligan (shuffle back, draw ${n})`)], { setup: true });
     if (m === 'mulligan') {
       const hand = [...s[p].hand];
       for (const id of hand) moveCard(g, id, `${p}-deck`);
       g.rng.shuffle(s[p].deck);
-      fx.draw(g, p, 5);
+      fx.draw(g, p, n);
       fx.emit(g, 'mulligan', { who: p });
     }
   }
@@ -225,7 +230,8 @@ function* corpAction(g) {
       break;
     }
     case 'advance': {
-      c.clicks--; fx.pay(g, 'corp', 1, 'advance');
+      c.clicks--;
+      fx.pay(g, 'corp', 1, 'advance', cardOf(g, id).type === 'ice' ? 'advance-ice' : undefined);
       inst(g, id).advancement++;
       fx.emit(g, 'card-advanced', { id, advancement: inst(g, id).advancement });
       break;
@@ -357,7 +363,12 @@ function* runnerAction(g) {
       fx.pay(g, 'runner', card.cost ?? 0, `play ${card.title}`);
       fx.emit(g, 'event-played', { id, code: card.code, title: card.title });
       yield* script.onPlay(g, { instId: id });
-      if (inst(g, id).zone === 'runner-hand') moveCard(g, id, 'runner-discard');
+      const it = inst(g, id);
+      // skipAutoDiscard: a one-off exemption an event's own onPlay can set
+      // (Networking) when it deliberately returns itself to the grip instead
+      // of the normal post-play discard.
+      if (it.zone === 'runner-hand' && !it.skipAutoDiscard) moveCard(g, id, 'runner-discard');
+      it.skipAutoDiscard = false;
       break;
     }
     case 'install': yield* runnerInstall(g, Number(arg)); break;
@@ -388,8 +399,9 @@ export function* runnerInstall(g, handId, { noClick = false, noCost = false, dis
     }
   }
   const cost = noCost ? 0 : Math.max(0, (card.cost ?? 0) - discount);
-  if (cost) fx.pay(g, 'runner', cost, `install ${card.title}`,
-    card.subtypes.includes('Virus') ? 'virus-install' : undefined);
+  const installPurpose = card.type === 'hardware' ? 'install-hardware'
+    : card.subtypes.includes('Virus') ? 'virus-install' : undefined;
+  if (cost) fx.pay(g, 'runner', cost, `install ${card.title}`, installPurpose);
   moveCard(g, handId, `rig-${card.type}`);
   const it = inst(g, handId);
   it.faceup = true; it.rezzed = true; it.installedTurn = s.turn;

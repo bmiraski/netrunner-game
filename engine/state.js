@@ -173,7 +173,19 @@ export function handSize(g, player) {
 // the "maximum hand size below zero at end of turn" flatline condition.
 export function handSizeRaw(g, player) {
   const p = g.state[player];
-  return p.baseHandSize - (player === 'runner' ? p.brainDamage : 0);
+  let n = p.baseHandSize - (player === 'runner' ? p.brainDamage : 0);
+  const idScript = getScript(cardOf(g, p.identity).code);
+  if (idScript?.handSizeMod) n += idScript.handSizeMod;      // NBN: The World is Yours
+  const ids = player === 'runner'
+    ? [...p.rig.program, ...p.rig.hardware, ...p.rig.resource]
+    : serverIds(g).flatMap(sid => [...g.state.corp.servers[sid].ice, ...g.state.corp.servers[sid].content]);
+  for (const id of ids) {
+    const it = inst(g, id);
+    if (player === 'corp' && !it.rezzed) continue;
+    const s = getScript(it.card.code);
+    if (s?.handSizeMod) n += s.handSizeMod;                  // Public Sympathy
+  }
+  return n;
 }
 export function newRemote(g) {
   const sid = `remote${++g.state.corp.remoteCounter}`;

@@ -154,7 +154,9 @@ Core), cards/waves-genesis-<a|b|c>.js (Genesis Cycle, planned).
 | 20057 | Dyson Mem Chip | hardware | done | |
 | 20058 | Crypsis | program | done | |
 | 20059 | Armitage Codebusting | resource | done | |
-| 20060 | Underworld Contact | resource | done | |## Genesis Cycle -- net-new cards (79)
+| 20060 | Underworld Contact | resource | done | |
+
+## Genesis Cycle -- net-new cards (79)
 
 The Genesis Cycle (`wla`/`ta`/`ce`/`asis`/`hs`/`fp`, 120 cards total) reprints 41
 titles already present in Revised Core under a different code -- those reprints are
@@ -176,15 +178,15 @@ Two new mechanics are required before all of these can be scripted:
 
 | Code | Title | Type | Status | Notes |
 |------|-------|------|--------|-------|
-| 02001 | Whizzard: Master Gamer | identity | pending |  |
-| 02005 | Cortez Chip | hardware | pending |  |
+| 02001 | Whizzard: Master Gamer | identity | done | Genesis wave A. Recurring credit pool restricted to trash-cost purpose. |
+| 02005 | Cortez Chip | hardware | done | Genesis wave A. New `rezCostBumps` engine primitive (targeted, until-end-of-turn rez cost increase). |
 | 02007 | ZU.13 Key Master | program | pending |  |
 | 02008 | The Helpful AI | resource | pending |  |
 | 02009 | Plascrete Carapace | hardware | pending |  |
-| 02011 | Mandatory Upgrades | agenda | pending |  |
+| 02011 | Mandatory Upgrades | agenda | done | Genesis wave A. onTurnStart +1 click. |
 | 02012 | Janus 1.0 | ice | pending |  |
 | 02015 | Snowflake | ice | pending | Needs Psi-game engine primitive (dedicated engine work, not a normal wave). |
-| 02016 | Restructured Datapool | agenda | pending |  |
+| 02016 | Restructured Datapool | agenda | done | Genesis wave A. [click] trace2 -> tag action. |
 | 02017 | TMI | ice | pending |  |
 | 02020 | Dracō | ice | pending |  |
 
@@ -193,39 +195,39 @@ Two new mechanics are required before all of these can be scripted:
 | Code | Title | Type | Status | Notes |
 |------|-------|------|--------|-------|
 | 02021 | Vamp | event | pending |  |
-| 02023 | Satellite Uplink | event | pending |  |
+| 02023 | Satellite Uplink | event | done | Genesis wave A. Expose up to 2 (stop-early loop). |
 | 02024 | e3 Feedback Implants | hardware | pending |  |
-| 02025 | Compromised Employee | resource | pending |  |
+| 02025 | Compromised Employee | resource | done | Genesis wave A. New `onIceRezzed` broadcast hook (any card can react to any ice being rezzed, distinct from the ice's own onRez). |
 | 02027 | Snowball | program | pending |  |
 | 02029 | Encryption Protocol | asset | pending |  |
 | 02030 | Sherlock 1.0 | ice | pending |  |
 | 02031 | Jinteki: Replicating Perfection | identity | pending |  |
 | 02032 | Fetal AI | agenda | pending |  |
 | 02034 | Sensei | ice | pending |  |
-| 02035 | Big Brother | operation | pending |  |
+| 02035 | Big Brother | operation | done | Genesis wave A. canPlay-if-tagged gate, +2 tags. |
 | 02036 | ChiLo City Grid | upgrade | pending | Needs Region upgrade-limit mechanic. |
 | 02037 | Power Grid Overload | operation | pending |  |
 | 02038 | Amazon Industrial Zone | upgrade | pending | Needs Region upgrade-limit mechanic. |
-| 02039 | Executive Retreat | agenda | pending |  |
-| 02040 | Freelancer | operation | pending |  |
+| 02039 | Executive Retreat | agenda | done | Genesis wave A. onScore agenda counter + shuffle HQ into R&D; action consumes counter to draw 5. |
+| 02040 | Freelancer | operation | done | Genesis wave A. canPlay-if-tagged gate; trash up to 2 resources loop. |
 
 ### Cyber Exodus (ce) -- 14 net-new cards
 
 | Code | Title | Type | Status | Notes |
 |------|-------|------|--------|-------|
 | 02041 | Nerve Agent | program | pending |  |
-| 02042 | Joshua B. | resource | pending |  |
+| 02042 | Joshua B. | resource | done | Genesis wave A. onTurnStart optional +1 click (deferred counter); onTurnEnd consumes it for +1 tag. |
 | 02044 | Muresh Bodysuit | hardware | pending |  |
 | 02045 | Snitch | program | pending |  |
 | 02049 | Personal Workshop | resource | pending |  |
-| 02050 | Public Sympathy | resource | pending |  |
+| 02050 | Public Sympathy | resource | done | Genesis wave A. New `handSizeMod` engine hook (per-installed-card max-hand-size modifier). |
 | 02052 | Viper | ice | pending |  |
 | 02053 | Edge of World | asset | pending |  |
 | 02054 | Sunset | operation | pending |  |
-| 02055 | Marked Accounts | asset | pending |  |
+| 02055 | Marked Accounts | asset | done | Genesis wave A. onTurnStart take 1cr if able; action loads 3cr. |
 | 02057 | Woodcutter | ice | pending |  |
-| 02058 | Commercialization | operation | pending |  |
-| 02059 | Private Contracts | asset | pending |  |
+| 02058 | Commercialization | operation | done | Genesis wave A. onPlay: pick ice, gain 1cr per advancement token. |
+| 02059 | Private Contracts | asset | done | Genesis wave A. onRez loads 14cr; action takes 2cr; trashes when empty. |
 | 02060 | Chimera | ice | pending |  |
 
 ### A Study in Static (asis) -- 13 net-new cards
@@ -235,14 +237,14 @@ Two new mechanics are required before all of these can be scripted:
 | 02061 | Disrupter | program | pending |  |
 | 02065 | Crescentus | program | pending |  |
 | 02066 | Deus X | program | pending |  |
-| 02068 | Inside Man | resource | pending |  |
+| 02068 | Inside Man | resource | done | Genesis wave A. New `'install-hardware'` recurring-pool purpose string (recurring credits usable to reduce hardware install cost). |
 | 02071 | Hourglass | ice | pending |  |
 | 02072 | Dedicated Server | asset | pending |  |
 | 02073 | Bullfrog | ice | pending | Needs Psi-game engine primitive (dedicated engine work, not a normal wave). |
 | 02074 | Uroboros | ice | pending |  |
 | 02075 | Net Police | asset | pending |  |
-| 02076 | Weyland Consortium: Because We Built It | identity | pending |  |
-| 02077 | Government Contracts | agenda | pending |  |
+| 02076 | Weyland Consortium: Because We Built It | identity | done | Genesis wave A. New `'advance-ice'` recurring-pool purpose string (recurring credits usable to pay ice-advance costs). |
+| 02077 | Government Contracts | agenda | done | Genesis wave A. [click][click] -> +4cr. |
 | 02078 | Tyrant | ice | pending |  |
 | 02079 | Oversight AI | operation | pending |  |
 
@@ -251,15 +253,15 @@ Two new mechanics are required before all of these can be scripted:
 | Code | Title | Type | Status | Notes |
 |------|-------|------|--------|-------|
 | 02081 | Surge | event | pending |  |
-| 02083 | Andromeda: Dispossessed Ristie | identity | pending |  |
-| 02084 | Networking | event | pending |  |
-| 02087 | Quality Time | event | pending |  |
+| 02083 | Andromeda: Dispossessed Ristie | identity | done | Genesis wave A (8th precon identity target). New `startingHandSize` per-identity override (default 5; Andromeda draws 9), consulted for both the opening draw and any mulligan redraw. |
+| 02084 | Networking | event | done | Genesis wave A. New `skipAutoDiscard` one-off instance flag (lets an event's own onPlay opt out of the runner action loop's normal post-play auto-discard). |
+| 02087 | Quality Time | event | done | Genesis wave A. onPlay draw 5. |
 | 02088 | Replicator | hardware | pending |  |
 | 02089 | Creeper | program | pending |  |
 | 02090 | Kraken | event | pending |  |
-| 02091 | Kati Jones | resource | pending |  |
-| 02092 | Eve Campaign | asset | pending |  |
-| 02093 | Rework | operation | pending |  |
+| 02091 | Kati Jones | resource | pending | Used as a test fixture in wave A tests only; not itself scripted this wave. |
+| 02092 | Eve Campaign | asset | done | Genesis wave A. onRez loads 16cr; onTurnStart takes 2cr; trashes when empty. |
+| 02093 | Rework | operation | done | Genesis wave A. onPlay: pick HQ card, shuffle into R&D. |
 | 02096 | Data Hound | ice | pending |  |
 | 02098 | Salvage | ice | pending |  |
 | 02099 | Simone Diego | upgrade | pending |  |
@@ -276,7 +278,7 @@ Two new mechanics are required before all of these can be scripted:
 | 02110 | Eli 1.0 | ice | pending |  |
 | 02111 | Ruhr Valley | upgrade | pending | Needs Region upgrade-limit mechanic. |
 | 02113 | Midori | upgrade | pending |  |
-| 02114 | NBN: The World is Yours | identity | pending |  |
+| 02114 | NBN: The World is Yours | identity | done | Genesis wave A. Uses the new `handSizeMod` engine hook (see Public Sympathy, 02050) at the identity level. |
 | 02116 | Midseason Replacements | operation | pending |  |
 | 02119 | Burke Bugs | ice | pending |  |
-| 02120 | Corporate War | agenda | pending |  |
+| 02120 | Corporate War | agenda | done | Genesis wave A. onScore: if corp has >=7cr, +7cr; otherwise loses all credits. |
