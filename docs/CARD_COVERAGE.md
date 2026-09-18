@@ -1,7 +1,8 @@
-# Card Coverage — Revised Core (132 cards)
+# Card Coverage — Revised Core (132 cards) + Genesis Cycle net-new (79 cards)
 
 Status: `done` (scripted + tested), `pilot` (in cards/pilots.js), `pending`.
-Simplifications MUST be noted here. Wave files: cards/waves-<a|b|c|d>.js
+Simplifications MUST be noted here. Wave files: cards/waves-<a|b|c|d>.js (Revised
+Core), cards/waves-genesis-<a|b|c>.js (Genesis Cycle, planned).
 
 ## Batch A (HB + Jinteki) — 32 cards
 
@@ -153,4 +154,129 @@ Simplifications MUST be noted here. Wave files: cards/waves-<a|b|c|d>.js
 | 20057 | Dyson Mem Chip | hardware | done | |
 | 20058 | Crypsis | program | done | |
 | 20059 | Armitage Codebusting | resource | done | |
-| 20060 | Underworld Contact | resource | done | |
+| 20060 | Underworld Contact | resource | done | |## Genesis Cycle -- net-new cards (79)
+
+The Genesis Cycle (`wla`/`ta`/`ce`/`asis`/`hs`/`fp`, 120 cards total) reprints 41
+titles already present in Revised Core under a different code -- those reprints are
+intentionally excluded from `cards.json` (the Revised Core code/printing stays
+canonical everywhere) and are not tracked here. This section covers only the 79
+net-new titles. See `docs/EXPANSION_ASSESSMENT.md` for the reprint list and
+methodology.
+
+Two new mechanics are required before all of these can be scripted:
+- **Psi games** (Snowflake 02015, Bullfrog 02073): simultaneous secret 0/1/2-credit
+  bids from both players, revealed together. No existing engine primitive models
+  simultaneous secret decisions (current model is turn-based yield/choose).
+- **Regions** (ChiLo City Grid 02036, Amazon Industrial Zone 02038, Ruhr Valley
+  02111 -- Hokusai Grid 02095 is a Revised Core reprint, tracked in Batch A): upgrades
+  with "Limit 1 region per server," an install-limit variant on top of the existing
+  upgrade-slot handling.
+
+### What Lies Ahead (wla) -- 11 net-new cards
+
+| Code | Title | Type | Status | Notes |
+|------|-------|------|--------|-------|
+| 02001 | Whizzard: Master Gamer | identity | pending |  |
+| 02005 | Cortez Chip | hardware | pending |  |
+| 02007 | ZU.13 Key Master | program | pending |  |
+| 02008 | The Helpful AI | resource | pending |  |
+| 02009 | Plascrete Carapace | hardware | pending |  |
+| 02011 | Mandatory Upgrades | agenda | pending |  |
+| 02012 | Janus 1.0 | ice | pending |  |
+| 02015 | Snowflake | ice | pending | Needs Psi-game engine primitive (dedicated engine work, not a normal wave). |
+| 02016 | Restructured Datapool | agenda | pending |  |
+| 02017 | TMI | ice | pending |  |
+| 02020 | Dracō | ice | pending |  |
+
+### Trace Amount (ta) -- 16 net-new cards
+
+| Code | Title | Type | Status | Notes |
+|------|-------|------|--------|-------|
+| 02021 | Vamp | event | pending |  |
+| 02023 | Satellite Uplink | event | pending |  |
+| 02024 | e3 Feedback Implants | hardware | pending |  |
+| 02025 | Compromised Employee | resource | pending |  |
+| 02027 | Snowball | program | pending |  |
+| 02029 | Encryption Protocol | asset | pending |  |
+| 02030 | Sherlock 1.0 | ice | pending |  |
+| 02031 | Jinteki: Replicating Perfection | identity | pending |  |
+| 02032 | Fetal AI | agenda | pending |  |
+| 02034 | Sensei | ice | pending |  |
+| 02035 | Big Brother | operation | pending |  |
+| 02036 | ChiLo City Grid | upgrade | pending | Needs Region upgrade-limit mechanic. |
+| 02037 | Power Grid Overload | operation | pending |  |
+| 02038 | Amazon Industrial Zone | upgrade | pending | Needs Region upgrade-limit mechanic. |
+| 02039 | Executive Retreat | agenda | pending |  |
+| 02040 | Freelancer | operation | pending |  |
+
+### Cyber Exodus (ce) -- 14 net-new cards
+
+| Code | Title | Type | Status | Notes |
+|------|-------|------|--------|-------|
+| 02041 | Nerve Agent | program | pending |  |
+| 02042 | Joshua B. | resource | pending |  |
+| 02044 | Muresh Bodysuit | hardware | pending |  |
+| 02045 | Snitch | program | pending |  |
+| 02049 | Personal Workshop | resource | pending |  |
+| 02050 | Public Sympathy | resource | pending |  |
+| 02052 | Viper | ice | pending |  |
+| 02053 | Edge of World | asset | pending |  |
+| 02054 | Sunset | operation | pending |  |
+| 02055 | Marked Accounts | asset | pending |  |
+| 02057 | Woodcutter | ice | pending |  |
+| 02058 | Commercialization | operation | pending |  |
+| 02059 | Private Contracts | asset | pending |  |
+| 02060 | Chimera | ice | pending |  |
+
+### A Study in Static (asis) -- 13 net-new cards
+
+| Code | Title | Type | Status | Notes |
+|------|-------|------|--------|-------|
+| 02061 | Disrupter | program | pending |  |
+| 02065 | Crescentus | program | pending |  |
+| 02066 | Deus X | program | pending |  |
+| 02068 | Inside Man | resource | pending |  |
+| 02071 | Hourglass | ice | pending |  |
+| 02072 | Dedicated Server | asset | pending |  |
+| 02073 | Bullfrog | ice | pending | Needs Psi-game engine primitive (dedicated engine work, not a normal wave). |
+| 02074 | Uroboros | ice | pending |  |
+| 02075 | Net Police | asset | pending |  |
+| 02076 | Weyland Consortium: Because We Built It | identity | pending |  |
+| 02077 | Government Contracts | agenda | pending |  |
+| 02078 | Tyrant | ice | pending |  |
+| 02079 | Oversight AI | operation | pending |  |
+
+### Humanity's Shadow (hs) -- 14 net-new cards
+
+| Code | Title | Type | Status | Notes |
+|------|-------|------|--------|-------|
+| 02081 | Surge | event | pending |  |
+| 02083 | Andromeda: Dispossessed Ristie | identity | pending |  |
+| 02084 | Networking | event | pending |  |
+| 02087 | Quality Time | event | pending |  |
+| 02088 | Replicator | hardware | pending |  |
+| 02089 | Creeper | program | pending |  |
+| 02090 | Kraken | event | pending |  |
+| 02091 | Kati Jones | resource | pending |  |
+| 02092 | Eve Campaign | asset | pending |  |
+| 02093 | Rework | operation | pending |  |
+| 02096 | Data Hound | ice | pending |  |
+| 02098 | Salvage | ice | pending |  |
+| 02099 | Simone Diego | upgrade | pending |  |
+| 02100 | Foxfire | operation | pending |  |
+
+### Future Proof (fp) -- 11 net-new cards
+
+| Code | Title | Type | Status | Notes |
+|------|-------|------|--------|-------|
+| 02103 | Data Leak Reversal | resource | pending |  |
+| 02107 | R&D Interface | hardware | pending |  |
+| 02108 | Deep Thought | program | pending |  |
+| 02109 | New Angeles City Hall | resource | pending |  |
+| 02110 | Eli 1.0 | ice | pending |  |
+| 02111 | Ruhr Valley | upgrade | pending | Needs Region upgrade-limit mechanic. |
+| 02113 | Midori | upgrade | pending |  |
+| 02114 | NBN: The World is Yours | identity | pending |  |
+| 02116 | Midseason Replacements | operation | pending |  |
+| 02119 | Burke Bugs | ice | pending |  |
+| 02120 | Corporate War | agenda | pending |  |
