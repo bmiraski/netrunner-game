@@ -28,6 +28,7 @@ export class RunnerAI extends BaseAI {
       { match: (g, d) => d.runStep === 'bypass', fn: (g, d) => this.bypass(g, d) },
       { match: (g, d) => d.runStep === 'access-ability', fn: () => 'use' },
       { match: (g, d) => d.trace, fn: (g, d) => this.traceBoost(g, d) },
+      { match: (g, d) => d.psi, fn: (g, d) => this.psiBet(g, d) },
       { match: (g, d) => d.discard, fn: (g, d) => this.discard(g, d) },
       { match: (g, d) => d.hosting, fn: () => 'host' },
       { match: (g, d) => /Not enough MU/.test(d.prompt), fn: (g, d) => this.muTrash(g, d) },
@@ -398,6 +399,18 @@ export class RunnerAI extends BaseAI {
 
   discard(g, d) {
     return this.bestByInst(g, d, it => -this.cardValue(g, it.card)) ?? d.options[0].id;
+  }
+
+  // ---------- psi games (Snowflake, Bullfrog) ----------
+  // See ai/corp.js#psiBet — secret/simultaneous, nothing to read, so this
+  // just bets randomly off the AI's own rng within what it can afford.
+  psiBet(g, d) {
+    const max = Math.min(d.max, g.state.runner.credits);
+    if (max <= 0) return 0;
+    const roll = this.rng.next();
+    if (max === 1) return roll < 0.5 ? 0 : 1;
+    if (this.level.key === 'hard') return roll < 1 / 3 ? 0 : roll < 2 / 3 ? 1 : 2;
+    return roll < 0.25 ? 0 : roll < 0.75 ? 1 : 2;
   }
   cardValue(g, card) {
     const script = getScript(card.code);

@@ -275,7 +275,16 @@ export function* corpInstall(g, handId, { noClick = false, noCost = false } = {}
     }
     targets.push(opt('t:new', 'Protecting a NEW remote server'));
   } else if (card.type === 'upgrade') {
-    for (const sid of serverIds(g)) targets.push(opt(`t:${sid}`, `In ${sid}`));
+    // "Limit 1 [Region] per server" (ChiLo City Grid, Amazon Industrial
+    // Zone, Ruhr Valley, ...): a generic install-time filter, not a
+    // per-card hook — mirrors the existing uniqueness check below. Checked
+    // against installed Regions regardless of rez state (the corp always
+    // knows its own installed cards); a brand-new remote is always legal.
+    const isRegion = card.subtypes.includes('Region');
+    for (const sid of serverIds(g)) {
+      if (isRegion && s.corp.servers[sid].content.some(id => cardOf(g, id).subtypes.includes('Region'))) continue;
+      targets.push(opt(`t:${sid}`, `In ${sid}`));
+    }
     targets.push(opt('t:new', 'In a NEW remote server'));
   } else {
     for (const sid of serverIds(g).filter(x => !isCentral(x))) {

@@ -15,7 +15,7 @@ Decision kinds (engine/decisions.js):
 - `number`: `{player, prompt, min, max}` → answer = integer
 
 Decisions carry context tags used by controllers/tests: `actionMenu`,
-`runStep`, `scoreWindow`, `discard`, `setup`, `trace`, `installTarget`.
+`runStep`, `scoreWindow`, `discard`, `setup`, `trace`, `psi`, `installTarget`.
 
 **Determinism contract:** seed + answer history replays the game exactly
 (`game.history`). Never call `Math.random()`; use `g.rng`. Never mutate state
@@ -32,7 +32,11 @@ the ONLY way to move cards. Ice arrays: index 0 = innermost, push = outermost.
 ## Key modules
 - `effects.js` — gainCredits/pay/canPay (bad-publicity pool aware), draw,
   trash, damage* (meat/net/core, flatline), addTags/removeTag, trace*,
-  scoreAgenda/stealAgenda, win, purgeVirus, discardToHandSize*.
+  psiGame* (Snowflake, Bullfrog: both sides yield a 0/1/2cr bet back-to-back
+  with no payment/event emitted until AFTER both have committed, so neither
+  side's pick is visible — even in the log — before both are locked in;
+  returns true if the bets differed, matching the printed "if different"
+  wording), scoreAgenda/stealAgenda, win, purgeVirus, discardToHandSize*.
   (* = generator; call with `yield*`)
 - `game.js` — mulligans, corp/runner turns, action menus, installs
   (ice cost scaling, MU + trash-for-room, uniqueness, install-over),

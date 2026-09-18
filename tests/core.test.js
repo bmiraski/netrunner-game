@@ -148,6 +148,21 @@ export default [
   assert.equal(lastEvent(game, 'run-end').data.successful, true);
 }],
 
+['Region limit: only 1 Region-subtype upgrade may be installed per server', () => {
+  const game = makeGame({ corp: [['Hokusai Grid', 2], ...filler(8)], runner: rFiller(10) });
+  const g = game.g;
+  const t = driver(game).keepHands();
+  t.label('Install Hokusai Grid').pick('t:new');
+  const sid = Object.keys(g.state.corp.servers).find(s => s.startsWith('remote'));
+  t.label('Install Hokusai Grid');
+  // the server that already has a Region must not be offered as a target
+  assert.ok(!t.d.options.some(o => o.id === `t:${sid}`));
+  t.pick('t:new'); // a brand-new remote is still legal
+  const sid2 = Object.keys(g.state.corp.servers).find(s => s.startsWith('remote') && s !== sid);
+  assert.notEqual(sid2, undefined);
+  assert.equal(g.state.corp.servers[sid2].content.length, 1);
+}],
+
 ['memory limit: 5th program forces trash prompt', () => {
   const game = makeGame({ corp: filler(10), runner: [['Gordian Blade', 5], ['Sure Gamble', 5]] });
   const t = driver(game).keepHands();

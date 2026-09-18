@@ -165,14 +165,21 @@ canonical everywhere) and are not tracked here. This section covers only the 79
 net-new titles. See `docs/EXPANSION_ASSESSMENT.md` for the reprint list and
 methodology.
 
-Two new mechanics are required before all of these can be scripted:
+Two new mechanics were required before all of these could be scripted; both
+are now implemented at the engine level (card scripting itself is Wave C):
 - **Psi games** (Snowflake 02015, Bullfrog 02073): simultaneous secret 0/1/2-credit
-  bids from both players, revealed together. No existing engine primitive models
-  simultaneous secret decisions (current model is turn-based yield/choose).
+  bids from both players, revealed together. Implemented as `fx.psiGame()`
+  (engine/effects.js) — both sides yield a `number` decision (tagged `psi`)
+  back-to-back with no payment or event emitted until after both have
+  committed, so neither side's pick is visible before both are locked in.
+  See ENGINE.md.
 - **Regions** (ChiLo City Grid 02036, Amazon Industrial Zone 02038, Ruhr Valley
   02111 -- Hokusai Grid 02095 is a Revised Core reprint, tracked in Batch A): upgrades
   with "Limit 1 region per server," an install-limit variant on top of the existing
-  upgrade-slot handling.
+  upgrade-slot handling. Implemented as a generic filter in `corpInstall()`
+  (engine/game.js): a Region-subtype upgrade can't target a server whose
+  content already includes another installed Region (a brand-new remote is
+  always legal). Not a per-card hook, same as the existing uniqueness check.
 
 ### What Lies Ahead (wla) -- 11 net-new cards
 

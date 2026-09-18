@@ -24,6 +24,7 @@ export class CorpAI extends BaseAI {
       { match: (g, d) => d.runStep === 'rez-ice', fn: (g, d) => this.rezIce(g, d) },
       { match: (g, d) => d.runStep === 'rez-content', fn: (g, d) => this.rezContent(g, d) },
       { match: (g, d) => d.trace, fn: (g, d) => this.traceBoost(g, d) },
+      { match: (g, d) => d.psi, fn: (g, d) => this.psiBet(g, d) },
       { match: (g, d) => d.discard, fn: (g, d) => this.discard(g, d) },
     ];
     this.cardPrompts = [
@@ -283,6 +284,22 @@ export class CorpAI extends BaseAI {
     if (needed <= d.max && needed <= g.state.corp.credits) return Math.min(needed, d.max);
     if (this.level.key === 'standard') return Math.min(2, d.max); // sometimes bluff
     return 0;
+  }
+
+  // ---------- psi games (Snowflake, Bullfrog) ----------
+  // Genuinely secret/simultaneous: nothing in `g` reveals the Runner's bet
+  // at this point (psiGame() defers payment/reveal until after both sides
+  // have picked — see engine/effects.js#psiGame), so there's no exploitable
+  // heuristic. Bet randomly off the AI's own rng, weighted a little toward
+  // 1 (the modal human bet) at 'standard' and closer to uniform at 'hard'
+  // (harder to read).
+  psiBet(g, d) {
+    const max = Math.min(d.max, g.state.corp.credits);
+    if (max <= 0) return 0;
+    const roll = this.rng.next();
+    if (max === 1) return roll < 0.5 ? 0 : 1;
+    if (this.level.key === 'hard') return roll < 1 / 3 ? 0 : roll < 2 / 3 ? 1 : 2;
+    return roll < 0.25 ? 0 : roll < 0.75 ? 1 : 2;
   }
 
   // ---------- discard ----------

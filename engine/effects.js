@@ -188,6 +188,35 @@ export function* trace(g, base, ctx = '') {
 }
 export function linkBonus(g) { return modSum(g, 'linkMod'); }
 
+// ---- psi games ----
+// "You and the Runner secretly spend 0, 1, or 2 credits. Reveal spent
+// credits. <effect> if you and the Runner spent a different number of
+// credits." (Snowflake, Bullfrog, and future Psi ice/ops.)
+//
+// The engine has no true simultaneous decisions — corp and runner each
+// yield in turn, like trace() — but unlike trace() neither side's pick may
+// be visible to the other before both have committed, or the "secret" part
+// is broken (a human runner could see the corp's bet in the log and choose
+// to dodge/match it before making their own). So both `number` decisions
+// are yielded back-to-back with NO payment or event emitted in between;
+// only once both sides have locked in a pick do we pay and reveal
+// (`psi-result`), in one shot. AI handlers must likewise not use any
+// information from the corp's pick when computing the runner's (ai/corp.js,
+// ai/runner.js) — there is nothing in `g.state` to peek at yet regardless,
+// since payment is deferred, but the ordering here is what makes that true.
+// Returns true if the two bets differed (the printed "if different" case).
+export function* psiGame(g, ctx = '') {
+  const cMax = Math.min(2, g.state.corp.credits + poolTotal(g, 'corp', 'psi'));
+  const rMax = Math.min(2, g.state.runner.credits + poolTotal(g, 'runner', 'psi'));
+  const cBet = yield number('corp', `Psi game (${ctx}): secretly bet 0, 1, or 2cr.`, 0, cMax, { psi: true });
+  const rBet = yield number('runner', `Psi game (${ctx}): secretly bet 0, 1, or 2cr.`, 0, rMax, { psi: true });
+  pay(g, 'corp', cBet, 'psi game', 'psi');
+  pay(g, 'runner', rBet, 'psi game', 'psi');
+  const same = cBet === rBet;
+  emit(g, 'psi-result', { corp: cBet, runner: rBet, same, ctx });
+  return !same;
+}
+
 // ---- agendas / winning ----
 export function* scoreAgendaFx(g, id) {
   const it = inst(g, id);

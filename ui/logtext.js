@@ -91,6 +91,7 @@ export function eventText(ev, g, viewer) {
     'tag-removed':    () => `Runner removes a tag (now ${d.total}).`,
     'trace-start':    () => `Trace ${d.base} initiated.`,
     'trace-result':   () => ({ text: `Trace ${d.success ? 'succeeds' : 'fails'} (strength ${d.ts} vs link ${d.link}).`, cls: d.success ? 'log-bad' : 'log-good' }),
+    'psi-result':     () => ({ text: `Psi game${d.ctx ? ` (${d.ctx})` : ''}: Corp bet ${d.corp}cr, Runner bet ${d.runner}cr — ${d.same ? 'matched' : 'different'}.`, cls: d.same ? 'log-good' : 'log-bad' }),
     'bad-publicity':  () => d.n > 0
       ? `Corp takes ${d.n} bad publicity (now ${d.total})${d.why ? ` — ${d.why}` : ''}.`
       : `Corp removes ${-d.n} bad publicity (now ${d.total}).`,
