@@ -18,6 +18,13 @@
 // from pre-Genesis; agenda-point swaps are exact-point-for-exact-point so
 // each corp deck's agenda math is unchanged too). See docs/CARD_COVERAGE.md
 // for what each new card does.
+//
+// 8th precon (andromeda-core): a new Genesis identity, not a Genesis-ified
+// old deck. Built entirely from the Criminal + neutral-runner pool (0
+// influence spent, so it sits far under the 15-influence cap) rather than
+// splashing another faction like the other three runner decks do — a
+// deliberate contrast with gabe-core's HQ-pressure plan using the SAME
+// breaker suite (only one Criminal breaker box exists in this card pool).
 
 export const DECKS = {
   corp: [
@@ -311,6 +318,53 @@ export const DECKS = {
         { code: '20050', qty: 2 }, // Magnum Opus
         // Resources (3)
         { code: '20059', qty: 3 }, // Armitage Codebusting
+      ],
+    },
+    {
+      key: 'andromeda-core',
+      name: 'Andromeda: Nine-Card Grind',
+      identity: '02083', // Andromeda: Dispossessed Ristie
+      side: 'runner',
+      description: 'Andromeda opens on 9 cards instead of 5 — bank the card advantage into a slow, hard-to-tag-out grind: bypass or tax problem ice (Femme Fatale, Cortez Chip, Crescentus), keep the info edge (Snitch-free scouting via Satellite Uplink), stay flush and off the trace radar (Kati Jones, Compromised Employee, New Angeles City Hall), and cash in every steal with Kraken.',
+      cards: [
+        // Programs (12): the same Criminal breaker box as gabe-core, but
+        // Femme Fatale (bypass) leads instead of self-trashing Faerie, with
+        // Crescentus taxing back any ice it fully breaks and Crypsis as an
+        // AI fallback.
+        { code: '20027', qty: 3 }, // Aurora
+        { code: '20030', qty: 3 }, // Peacock
+        { code: '20029', qty: 2 }, // Femme Fatale
+        { code: '20028', qty: 1 }, // Faerie
+        { code: '20058', qty: 1 }, // Crypsis
+        { code: '02065', qty: 2 }, // Crescentus
+        // Events (13): core economy plus the wider Genesis Criminal kit
+        // gabe-core doesn't use — Kraken punishes every steal, Networking
+        // clears a tag for a card, Satellite Uplink scouts before committing.
+        { code: '20056', qty: 3 }, // Sure Gamble
+        { code: '20020', qty: 3 }, // Easy Mark
+        { code: '02090', qty: 2 }, // Kraken
+        { code: '20055', qty: 2 }, // Infiltration
+        { code: '02023', qty: 2 }, // Satellite Uplink
+        { code: '02084', qty: 1 }, // Networking
+        // Hardware (7): damage protection (Plascrete, Muresh) so the big
+        // opening hand survives to be spent, plus Doppelgänger tempo,
+        // Cortez Chip tax, and e3 Feedback Implants to stretch every break.
+        { code: '02009', qty: 2 }, // Plascrete Carapace
+        { code: '02044', qty: 1 }, // Muresh Bodysuit
+        { code: '20025', qty: 1 }, // Doppelgänger
+        { code: '02005', qty: 1 }, // Cortez Chip
+        { code: '02024', qty: 2 }, // e3 Feedback Implants
+        // Resources (13): Kati Jones/Compromised Employee/Armitage keep
+        // credits flowing without spending clicks on runs, New Angeles City
+        // Hall and Fall Guy protect the board, Public Sympathy protects the
+        // big hand itself from a forced discard.
+        { code: '02091', qty: 3 }, // Kati Jones
+        { code: '02109', qty: 2 }, // New Angeles City Hall
+        { code: '02025', qty: 3 }, // Compromised Employee
+        { code: '02050', qty: 2 }, // Public Sympathy
+        { code: '20036', qty: 1 }, // Mr. Li
+        { code: '20035', qty: 1 }, // Fall Guy
+        { code: '20059', qty: 1 }, // Armitage Codebusting
       ],
     },
   ],

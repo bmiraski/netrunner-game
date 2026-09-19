@@ -10,9 +10,9 @@ const isNeutral = f => f.startsWith('neutral');
 
 const tests = [];
 
-tests.push(['DECKS has 4 corp and 3 runner decks with unique keys', () => {
+tests.push(['DECKS has 4 corp and 4 runner decks with unique keys', () => {
   assert.equal(DECKS.corp.length, 4);
-  assert.equal(DECKS.runner.length, 3);
+  assert.equal(DECKS.runner.length, 4);
   const keys = ALL.map(d => d.key);
   assert.equal(new Set(keys).size, keys.length);
   for (const d of ALL) assert.equal(deckByKey(d.key), d);

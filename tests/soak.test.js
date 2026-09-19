@@ -22,7 +22,7 @@ export default [
   assert.ok(result.turns >= 1);
 }],
 
-['all 12 matchups x 2 seeds (standard/standard) finish without stall or aiErrors', () => {
+['all 16 matchups x 2 seeds (standard/standard) finish without stall or aiErrors', () => {
   let corpWins = 0, runnerWins = 0;
   const reasons = {};
   for (const corp of DECKS.corp) {
@@ -42,8 +42,8 @@ export default [
       }
     }
   }
-  assert.equal(corpWins + runnerWins, 24);
-  console.log(`        [soak] 24 games — corp ${corpWins}, runner ${runnerWins}, reasons ${JSON.stringify(reasons)}`);
+  assert.equal(corpWins + runnerWins, 32);
+  console.log(`        [soak] 32 games — corp ${corpWins}, runner ${runnerWins}, reasons ${JSON.stringify(reasons)}`);
 }],
 
 ['determinism: identical autoplay config twice -> identical history', () => {

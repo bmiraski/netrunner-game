@@ -106,10 +106,10 @@ export default [
     assert.deepEqual(buildOptionMap(null).byInst.size, 0);
   }],
 
-  ['all seven precon decks resolve for the setup screen', async () => {
+  ['all eight precon decks resolve for the setup screen', async () => {
     const { DECKS, gameConfig } = await import('../ai/decks.js');
     assert.equal(DECKS.corp.length, 4);
-    assert.equal(DECKS.runner.length, 3);
+    assert.equal(DECKS.runner.length, 4);
     for (const d of [...DECKS.corp, ...DECKS.runner]) {
       assert.ok(d.name && d.description, `deck ${d.key} missing name/description`);
       assert.ok(db.card(d.identity).type === 'identity');
