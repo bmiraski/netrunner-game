@@ -33,6 +33,22 @@ export function escapeHtml(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+// Card art (self-hosted; see docs/UI.md "Card art"). Relative to the built
+// HTML's own location, so it works whether served from the repo root or
+// double-clicked locally out of a checked-out copy of the repo.
+// size: 'small' (116x162, board/hand/rig tiles) | 'large' (300x419, inspector).
+export function artUrl(code, size = 'small') {
+  return `./cards-art/${size}/${code}.jpg`;
+}
+
+// <img> for a card's art. onerror hides the element rather than showing a
+// broken-image icon, so a missing/renamed file degrades to the plain
+// text-tile look instead of an ugly gap — never trust the art to be there.
+export function artImgTag(code, size, cssClass) {
+  return `<img class="${cssClass}" src="${artUrl(code, size)}" alt=""
+    loading="lazy" onerror="this.remove()">`;
+}
+
 // card.text -> safe HTML with symbol spans, <strong> preserved, newlines -> <br>
 export function markupToHtml(text) {
   if (!text) return '';
@@ -62,6 +78,7 @@ export function cardPanelHtml(card) {
   const sub = card.subtypes?.length ? card.subtypes.join(' - ') : '';
   return `
   <div class="card-full" style="--fc:${color}">
+    ${artImgTag(card.code, 'large', 'cf-art')}
     <div class="cf-title">${escapeHtml(card.title)}${card.uniqueness ? ' &#x25C6;' : ''}</div>
     <div class="cf-typeline">${escapeHtml(card.type)}${sub ? ': ' + escapeHtml(sub) : ''}
       <span class="cf-faction">${escapeHtml((FACTION[card.faction] ?? FACTION.neutral).name)}</span></div>

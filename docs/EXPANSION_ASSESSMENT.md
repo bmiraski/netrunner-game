@@ -197,6 +197,22 @@ different and more exposed decision than reusing card text, and is worth an
 explicit go/no-go from Ben specifically, separate from the text/data
 question above, before any art work begins.
 
+**Decision (2026-09-18): go, self-hosted, board tiles + inspector.** Ben's
+own call, made with the risk above already on the table: "Since this is
+still an invite only game, and although a public Github, it isn't like
+anyone is searching for this." That's the same personal/friends-group
+posture §7 already recommends for card text, extended by Ben to art. Images
+are self-hosted in `cards-art/` (downloaded once from NetrunnerDB's
+`card-images.netrunnerdb.com` CDN, not hotlinked) rather than remotely
+loaded from NSG's or FFG's infrastructure at request time, which keeps the
+repo self-contained and doesn't put live traffic on NSG's servers. This is
+not a reassessment of the underlying copyright position in the paragraph
+above — that's unchanged, the art is still under normal copyright — it's a
+record that Ben weighed it and chose to proceed anyway for this small,
+non-public-facing use. Revisit this call before ever making the repo's
+*game* more discoverable/promoted (a different exposure level than "public
+but nobody's looking"). See `docs/UI.md` ("Card art") for the implementation.
+
 ## 8. Decision needed from Ben before implementation starts
 
 This assessment surfaces a choice rather than a single obvious next step.

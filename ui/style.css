@@ -128,10 +128,32 @@ button, select, input { font: inherit; }
 .tile-unrezzed, .tile-facedown { opacity: .8; }
 .tile-facedown .tile-title, .tile-unrezzed .tile-title { color: var(--dim); letter-spacing: .2em; }
 .tile-back {
-  min-width: 46px; height: 30px; background: repeating-linear-gradient(
+  width: 116px; min-width: 116px; height: 162px; background: repeating-linear-gradient(
     135deg, #1a2233 0 6px, #141b29 6px 12px);
 }
 .tile-badges { position: absolute; top: -7px; right: -5px; display: flex; gap: 2px; }
+
+/* Card art (self-hosted, see docs/UI.md "Card art"): tiles the viewer is
+   allowed to see grow into a card-shaped box (116x162, matches the small
+   art crop 1:1 — no scaling blur) with the art as a full-bleed background
+   and title/subtypes/stats as a bottom scrim overlay. Hidden/facedown
+   tiles (and any tile whose art 404s, via the onerror-remove on the <img>
+   itself) fall back to the original plain padded box below — never gated
+   on the image actually loading. Badges keep poking out past the top-right
+   corner exactly as before (no overflow:hidden on .tile itself).
+*/
+.tile-has-art {
+  width: 116px; min-width: 116px; height: 162px; padding: 0; overflow: visible;
+}
+.tile-art {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; border-radius: 3px; display: block;
+}
+.tile-has-art .tile-info {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 4px 6px 3px;
+  border-radius: 0 0 3px 3px;
+  background: linear-gradient(to top, rgba(8,10,15,.94), rgba(8,10,15,.72) 65%, transparent);
+}
 .badge {
   font-size: 10px; border-radius: 8px; padding: 0 5px; border: 1px solid var(--edge);
   background: var(--panel); color: var(--text);
@@ -237,6 +259,10 @@ button, select, input { font: inherit; }
   100% { box-shadow: none; background: transparent; }
 }
 .card-full { padding: 10px 12px; border-left: 3px solid var(--fc, var(--edge)); }
+.cf-art {
+  display: block; max-width: 100%; height: auto; margin: 0 auto 8px;
+  border-radius: 4px; border: 1px solid var(--edge);
+}
 .cf-title { color: var(--fc, var(--text)); font-weight: bold; }
 .cf-typeline { color: var(--dim); font-size: 12px; margin: 2px 0 6px; text-transform: capitalize; }
 .cf-faction { float: right; color: var(--fc, var(--dim)); }

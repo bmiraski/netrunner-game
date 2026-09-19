@@ -4,7 +4,7 @@
 import { memoryUsed, memoryLimit, handSize } from '../engine/state.js';
 import { activeSubs, iceStrength } from '../engine/run.js';
 import { linkBonus } from '../engine/effects.js';
-import { escapeHtml, factionColor, statLine, cardPanelHtml } from './cardtext.js';
+import { escapeHtml, factionColor, statLine, cardPanelHtml, artImgTag } from './cardtext.js';
 import { eventText, serverName } from './logtext.js';
 
 const h = (html) => {
@@ -47,11 +47,18 @@ function tile(app, it, { facedown = false, ice = false } = {}) {
   const color = shown ? factionColor(card.faction) : '#39404d';
   const subline = shown && card.subtypes?.length
     ? `<div class="tile-sub">${escapeHtml(card.subtypes.slice(0, 3).join(' · '))}</div>` : '';
-  const el = h(`<div class="tile ${ice ? 'tile-ice' : ''} ${facedown ? 'tile-facedown' : ''}"
+  // Art only ever renders for a card the viewer is actually allowed to see
+  // (shown === !facedown, already perspective-filtered by the caller) —
+  // never leak a hidden card's identity through its art.
+  const art = shown ? artImgTag(card.code, 'small', 'tile-art') : '';
+  const el = h(`<div class="tile ${shown ? 'tile-has-art' : ''} ${ice ? 'tile-ice' : ''} ${facedown ? 'tile-facedown' : ''}"
        data-inst="${it.id}" style="--fc:${color}">
-    <div class="tile-title">${shown ? escapeHtml(card.title) : (ice ? 'ICE' : 'CARD')}</div>
-    ${subline}
-    ${shown ? `<div class="tile-stats">${escapeHtml(statLine(card))}</div>` : ''}
+    ${art}
+    <div class="tile-info">
+      <div class="tile-title">${shown ? escapeHtml(card.title) : (ice ? 'ICE' : 'CARD')}</div>
+      ${subline}
+      ${shown ? `<div class="tile-stats">${escapeHtml(statLine(card))}</div>` : ''}
+    </div>
     ${badges(it, shown)}
   </div>`);
   if (ice && !it.rezzed) el.classList.add('tile-unrezzed');

@@ -67,8 +67,8 @@ so the board mapping is a convenience, never the only path.
 
 ## Card rendering
 
-Styled text cards (locked decision; `imageUrl` on every card is the future
-hook). `cardtext.js` escapes everything, then substitutes
+Styled text cards plus real art (see "Card art" below). `cardtext.js`
+escapes everything, then substitutes
 `[credit] [click] [subroutine] [trash] [mu] [recurring-credit] [link]` and
 re-allows `<strong>`. Clicking any visible card shows the full card in the
 "CARD DETAILS" inspector panel with an attention flash (glow animation).
@@ -77,6 +77,39 @@ main.js: operation/event played, install, rez, encounter, access,
 score/steal), the newest such card since the last repaint is shown
 automatically so the player can immediately assess it. Faction colors in
 `FACTION` (cardtext.js).
+
+## Card art
+
+Real card art (self-hosted, not hotlinked) for the Revised Core Set and the
+Genesis Cycle: 211 cards × 2 sizes, downloaded once from NetrunnerDB's image
+CDN into `cards-art/{large,small}/{code}.jpg` (~11MB total) and served as
+plain static files alongside the built HTML — see `docs/EXPANSION_ASSESSMENT.md`
+§7 for the licensing call that authorized this (go, self-hosted,
+personal/friends-group use).
+
+- `cardtext.js`: `artUrl(code, size)` builds the relative path
+  (`./cards-art/{size}/{code}.jpg`); `artImgTag(code, size, cssClass)` returns
+  the `<img>` tag, with `onerror="this.remove()"` so a missing file falls
+  back to the plain text-tile/panel look instead of a broken-image icon.
+- **Board/hand/rig tiles** (`render.js` `tile()`): `small` (116×162) art fills
+  the tile as a background image; title/subline/stats move into a
+  `.tile-info` overlay with a bottom scrim for legibility over busy art.
+  Card backs (`.tile-back`) are sized to match (116×162) so unrezzed
+  ice/facedown cards and hand-card-backs line up visually with art tiles.
+- **Inspector panel** (`cardtext.js` `cardPanelHtml()`): `large` (300×419) art
+  above the title/text.
+- **Perspective safety**: art is only ever rendered for cards the existing
+  `shown`/`!facedown` logic already reveals — the same gate that governs
+  title/stats/subtypes — so hidden or unrezzed cards never leak identity
+  through art either. No separate check was added; art reuses the existing
+  gate so it can't drift out of sync with it.
+- Paths are relative to the built HTML's own location, so art works whether
+  the repo is served from its root or `netrunner.html` is double-clicked
+  locally out of a checked-out copy.
+- Verified with a real headless-Chromium screenshot (Playwright,
+  `data/tmp/visual-check.mjs`, not part of the committed test suite) since
+  `tools/ui-smoke.js` (jsdom) can't render pixels: art displays, overlay text
+  stays legible, zero console errors, zero broken `<img>` elements.
 
 ## Log rendering
 
@@ -133,6 +166,7 @@ smoke test sets this. Watch mode is unaffected (manual Step buttons).
 
 Complete per BUILD_PLAN: full board, run visualization with per-sub state,
 trackers, scrollable log, legal-action highlighting, keyboard + mouse, dark
-theme. Deferred to later phases (9 unless noted): real card art via imageUrl,
-richer animations, balance tuning, any bugs found in play. Tutorial overlays
-are Phase 6; they should drive the same prompt/highlight machinery.
+theme, real card art (see "Card art" above — shipped post-Genesis-Cycle,
+not deferred). Deferred to later phases (9 unless noted): richer animations,
+balance tuning, any bugs found in play. Tutorial overlays are Phase 6; they
+should drive the same prompt/highlight machinery.
