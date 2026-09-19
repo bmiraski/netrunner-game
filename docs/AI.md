@@ -18,7 +18,7 @@ ai/
   corp.js        CorpAI
   runner.js      RunnerAI
   controller.js  AIController (binds AIs to a Game) + autoplay()
-  decks.js       7 precon decks (4 corp / 3 runner) + gameConfig()
+  decks.js       8 precon decks (4 corp / 4 runner) + gameConfig()
   index.js       re-exports
 ```
 

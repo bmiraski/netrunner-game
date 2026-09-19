@@ -28,6 +28,9 @@ event on `g.log`.
 brokenSubs, installedTurn}`. `state` holds both players, servers, run state.
 Zones are strings (see state.js header comment); `moveCard(g, id, zone)` is
 the ONLY way to move cards. Ice arrays: index 0 = innermost, push = outermost.
+`runner-hosted` is a Genesis-added zone: cards hosted on Personal Workshop,
+tracked with power counters (install cost) that tick down by a paid action
+or automatically each turn, auto-installing at 0.
 
 ## Key modules
 - `effects.js` — gainCredits/pay/canPay (bad-publicity pool aware), draw,
@@ -61,6 +64,13 @@ installed. Register scripts via a `register*(db)` pattern (see cards/pilots.js).
 onPlay*(g,{instId})        effect; cost + click already paid
 canPlay(g)                 extra play condition (SEA Source, Neural EMP)
 extraClickCost: 1          Celebrity Gift / Singularity additional click
+skipAutoDiscard: true      (one-off instance flag, set from onPlay) lets an
+                           event opt out of the post-play auto-discard —
+                           Networking re-adding itself to the grip
+
+// resources & hardware (installable any time, not gated like events)
+canInstall(g)              extra install condition, mirrors canPlay — Data
+                           Leak Reversal (only after a central-server run)
 
 // ice
 subroutines: [{label, resolve*(g,{iceId})}]   end run: g.state.run.ended = true
@@ -95,6 +105,16 @@ onRez*(g,{instId})         Elizabeth Mills
 onInstall*(g,{instId})     Bank Job load, Imp counters, Rabbit Hole search
 onAccess*(g,{instId,server})   ambushes (Snare!, Junebug) — corp pay decision
 onTraceResolved*(g,{success,instId,ctx})   Spinal Modem
+onIceRezzed*(g,{iceId})    broadcast to ANY card, not just the ice's own
+                           onRez (Compromised Employee)
+onIceInstalled*(g,{iceId}) broadcast on install, before rez (Amazon
+                           Industrial Zone's discount-rez-it offer)
+onHardwareInstalled*(g,{instId})  broadcast on hardware install (Replicator
+                           searches the stack for a second copy)
+approachAbility: {label, req(g,it), effect*}   Snitch, Midori — offered
+                           while approaching the ice (may end in jack-out)
+traceInterrupt(g,it,{traceCtx})   Disrupter: reduce a trace's base
+                           strength to 0 before it resolves
 
 // numeric modifiers (plain functions returning a number)
 rezCostMod(g,it,target)    Xanadu +1 ice, Reina first-ice +1 (use
@@ -108,11 +128,24 @@ memoryMod: 1               +MU hardware/identities (plain number)
 hqAccessMod/rdAccessMod(g,it)   HQ Interface / R&D access bonuses
 advReqMod(g,it)            agenda advancement requirement modifier
 bonusPoints(g,it)          Project Beale extra points
+rezCostBumps(g,it,target)  targeted, until-end-of-turn rez cost increase
+                           (Cortez Chip) or discount (Amazon Industrial Zone)
+memoryCostOverride(g,it)   0 MU at 2+ link (ZU.13 Key Master, Creeper)
+handSizeMod(g,it)          Public Sympathy, NBN: The World is Yours
+startingHandSize: 9        per-identity opening-hand override (default 5;
+                           applies to the mulligan redraw too) — Andromeda
+trashCostMod(g,it,target)  +1 trash cost to every installed card while
+                           rezzed, including itself (Encryption Protocol)
+extraRunClickCost(g,it,sid)  running its server costs an extra [click]
+                           (Ruhr Valley)
 
 // economy / pools
 recurring: {n, purposes:[...]}  refilled each owner turn; purposes:
-   'icebreaker','trace','trash','virus-install','hq-run','remove-tag'
-   (n may be a function(g,it) — Pheromones)
+   'icebreaker','trace','trash','virus-install','hq-run','remove-tag',
+   'install-hardware' (Inside Man), 'advance-ice' (Weyland: BaBW),
+   'advance-here' (Simone Diego, own server's root/protecting ice),
+   'rez-ice' (TMI, Dedicated Server, Net Police)
+   (n may be a function(g,it) — Pheromones, Net Police [Runner's link])
 
 // installed-card click abilities (appear in action menus)
 actions: [{label|label(g,it), clicks=1, credits=0, trashSelf, once,
@@ -121,11 +154,17 @@ actions: [{label|label(g,it), clicks=1, credits=0, trashSelf, once,
 
 // prevention / protection
 preventDamage: {types:['meat'], amount:3, trashSelf:true}   Crash Space
+   (also: auto:true + perTurn for an automatic once-per-turn prevention
+   with no decision — Muresh Bodysuit)
 preventTrash:  {types:['resource','program','hardware']}    Fall Guy, Sac Con
+preventTag: {cost}         generator hook, interrupt -> pay to prevent 1 tag
+                           (New Angeles City Hall; trashes itself onSteal)
 
 // access / steal shaping
 stealCost: {credits:5} | {clicks:1}    Red Herrings, Strongbox (persistent
    after mid-run trash: push onto g.state.run.extraStealCosts in a trash hook)
+   — an AGENDA may also set its own stealCost directly (Fetal AI: 2cr),
+   read by stealDecision alongside server upgrades/extraStealCosts
 accessAbility: {label, req(g,it,{accessedId}), effect*}     Imp
 insteadOfBreach: {label, appliesTo(g,sid), effect*}         Bank Job
 runWindowAbility: {label(g,it), req(g,it), effect*}         Nisei counter,
@@ -147,7 +186,11 @@ doRun*(g,sid,mods) from run.js — run-event mods: accessBonus,
    insteadOnSuccess*/insteadLabel, bypassFirstEncounter, hostedCredits,
    changeServerOnSuccess, onEnd*, accessAbilities[]
 Useful flags: g.state.flags.turn.{runsMade,successfulRuns,stolen,iceRezzed,
-   tinkered}  g.state.flags.lastRunnerTurn.{ranServers,successfulRuns,stolenPoints}
+   tinkered,virusProgramsGained}  g.state.flags.lastRunnerTurn.{ranServers,
+   successfulRuns,stolenPoints}
+fx.psiGame*(g,ctx)  simultaneous secret 0/1/2cr bid from both sides,
+   revealed together — no payment/event emitted until both commit; returns
+   true if the bets differed (Snowflake, Bullfrog)
 ```
 
 ## Tests (tests/)
@@ -166,5 +209,9 @@ turns with no plays end in a discard decision.
 - Corp mid-run windows: rez approached ice, rez attacked server content, and
   scripted runWindowAbility cards only
 - "May" triggers that are strictly beneficial auto-resolve (PAD, Gabriel)
-- Region limit not enforced (Hokusai Grid is the only region; deck limits
-  make duplicates in one server impossible anyway except by install choice)
+- Region limit ("Limit 1 region per server") IS enforced (Genesis Cycle):
+  `corpInstall()` filters out any server whose content already includes an
+  installed Region-subtype upgrade (a brand-new remote is always legal) —
+  a generic filter, not a per-card hook, same shape as the existing
+  uniqueness check. Covers Hokusai Grid plus the three Genesis regions
+  (ChiLo City Grid, Amazon Industrial Zone, Ruhr Valley).

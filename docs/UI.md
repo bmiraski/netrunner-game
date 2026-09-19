@@ -38,7 +38,7 @@ ui/
 ## Modes and seats
 
 Setup screen: play as Runner, Corp, or watch AI vs AI; pick both decks
-(7 precons from `ai/decks.js`), AI difficulty, optional seed (blank = random).
+(8 precons from `ai/decks.js`), AI difficulty, optional seed (blank = random).
 Non-human seats get `CorpAI`/`RunnerAI` (seeds `seed*7+1` / `seed*13+2`,
 matching `autoplay`). Watch mode renders viewer `'all'` and drives the game
 with Step / Step 25 / Next turn buttons calling `ctl.step()`.

@@ -261,8 +261,67 @@
     C: full Standard pool, D: everything/Eternal) with a recommendation to
     pilot on A or B. **Awaiting Ben's decision** on which pool to target
     before any expansion implementation begins.
-- Then: remaining **Phase 9 — Verification & polish** items (BUILD_PLAN),
-  and the card-art / expansion work once the assessment above is in hand.
+- **Genesis Cycle expansion: COMPLETE** — 2026-09-17 to 2026-09-18. Ben's
+  decision on `docs/EXPANSION_ASSESSMENT.md`'s options: pilot **Option A**
+  (one more classic cycle) — the Genesis Cycle (`wla`/`ta`/`ce`/`asis`/
+  `hs`/`fp`, 120 cards total, 79 net-new after excluding the 41 titles that
+  are Revised-Core reprints under a different code).
+  - **Data pipeline:** merged the 79 net-new titles into `cards.json` from
+    six raw pack fetches (`data/genesis_raw_<pack>.json`); reprints stay
+    excluded so the Revised Core printing/code remains canonical everywhere.
+    `data/cards.json` is now 211 cards total (132 + 79).
+  - **Card scripting, in waves** (mirroring the original Phase 3 approach):
+    wave A (24 vanilla/simple-stat cards), wave B (trace ice, bioroid ice,
+    advanceable ice, recurring credits), wave C (30 unique/complex cards).
+    Two new engine primitives were needed before wave C could finish, both
+    added generically rather than per-card: **psi games** (`fx.psiGame()`,
+    simultaneous secret 0/1/2cr bids — Snowflake, Bullfrog) and **Region
+    upgrade-limit enforcement** ("limit 1 region per server", a generic
+    `corpInstall()` filter — ChiLo City Grid, Amazon Industrial Zone, Ruhr
+    Valley, on top of the pre-existing Hokusai Grid). Full primitive list
+    and per-card notes: `docs/CARD_COVERAGE.md`, `docs/ENGINE.md`. All 79
+    net-new cards are `done` (scripted + tested) — no `pending` cards remain
+    in the Genesis pool.
+  - **Precon enrichment:** all 7 existing Revised-Core precons got 3-5
+    same-faction Genesis-card swaps apiece (21 cards total) that clearly
+    strengthen each deck's stated plan — in-faction, so influence totals
+    are unchanged, and agenda swaps are exact-point-for-exact-point so
+    corp agenda math is unchanged too. Full per-deck rationale in
+    `ai/decks.js`'s comments.
+  - **New 8th precon — `andromeda-core`** (Andromeda: Dispossessed Ristie,
+    the new Genesis identity — 9-card opening hand via the new
+    `startingHandSize` engine hook): built entirely from the Criminal +
+    neutral-runner pool at 0 influence, deliberately distinct from
+    `gabe-core`'s HQ-pressure plan despite sharing the only Criminal
+    breaker box in this card pool.
+  - **Tutorial re-sync:** the hb-core/gabe-core content changes shifted the
+    deterministic seed-11 shuffle just enough that the guided script's
+    first remote now opens on PAD Campaign instead of Adonis Campaign
+    (everything downstream — Viktor 1.0, the R&D run, the Project Ares
+    steal — held). Traced the new replay and re-synced `tutorial/steps.js`,
+    `tests/tutorial.test.js`, `docs/TUTORIAL.md`.
+  - **AI soak-tested, no tuning needed:** `tools/soak.js` at 20 seeds x
+    (standard/standard) and (hard/hard) — 640 games, 0 stalls, 0 aiErrors —
+    plus a 240-game recheck focused on the four new andromeda-core
+    matchups. Every matchup landed within the game's normal variance (the
+    one row that looked skewed at a small sample turned out to be sampling
+    noise at a larger one). Documented in `docs/AI.md`'s tuning list
+    alongside the Phase 9 Jinteki-Gabe/Weyland-Reina entries.
+  - Test suite grew from 252 (Phase 9 end) to **341 passing, 0 failing**.
+  - **Push note:** same sandbox git-proxy restriction as the Phase 9 note
+    below — direct `git push` from this sandbox is denied ("not in this
+    session's authorized repository set"). Worked around each time with a
+    `git bundle create origin/main..main` → `SendUserFile` → Ben applies
+    it locally (`git fetch <bundle> main:<tmp-branch>` +
+    `merge --ff-only` + `git push`) → confirmed via `git fetch origin`
+    here. This pattern is now proven across multiple round-trips this
+    session; treat it as the default path until the proxy restriction is
+    lifted on Ben's end.
+- Then: remaining **Phase 9 — Verification & polish** items (BUILD_PLAN)
+  — performance pass and real card art (still pending Ben's go/no-go on
+  licensing, per the Expansion-inputs assessment) — plus whatever Ben wants
+  from the Genesis Cycle pool next (`docs/EXPANSION_ASSESSMENT.md` sizes
+  Options B/C/D if a further expansion is wanted later).
 
 ## GitHub (sync at the end of every step)
 - Repo: `bmiraski/netrunner-game` (main). Access token: `.git-token` file in
@@ -320,24 +379,33 @@ data/
                         Card schema fully documented in its docstring.
   core2_raw.json      ← raw NRDB data (don't edit; re-fetch if ever needed)
   adn49_checklist.json← card list parsed from ADN49 PDF (verification reference)
+  genesis_raw_<pack>.json ← raw NRDB fetches for the 6 Genesis Cycle packs
+                        (wla/ta/ce/asis/hs/fp), merged into cards.json
   tmp/                ← fetch artifacts, keep until Phase 9, then delete
 docs/
   BUILD_PLAN.md       ← 9-phase roadmap (key project document)
   PROJECT_NOTES.md    ← this file
   ENGINE.md           ← engine architecture + how to script cards / write tests
   AI.md               ← AI architecture, difficulty knobs, tuning list
-  CARD_COVERAGE.md    ← per-card implementation status + deviations
+  CARD_COVERAGE.md    ← per-card implementation status + deviations (Revised
+                        Core + Genesis Cycle net-new, 211 cards total)
   UI.md               ← UI architecture (Phase 5): decision renderer, perspective
                         rules, run panel, keyboard, pacing
   TUTORIAL.md         ← tutorial architecture (Phase 6): guided script, callouts, hints
   ANALYSIS.md         ← post-game analysis architecture (Phase 7): detectors,
                         findings, review overlay
   HOSTING.md          ← Hosted pivot (Phase 8): Supabase setup, deploy, invites
+  EXPANSION_ASSESSMENT.md ← NetrunnerDB/NSG landscape research + sized options
+                        (A-D) for expanding past Revised Core; Genesis Cycle
+                        below is Option A, now implemented
 engine/               ← rules engine (rng, events, state, decisions, effects,
                         game, run, db) — see ENGINE.md
-cards/                ← registry.js + pilots.js + waves-a/b/c/d.js (132 cards)
-ai/                   ← view/base/corp/runner/controller/decks — see AI.md
-tests/                ← run-tests.js + 13 *.test.js files (248 tests)
+cards/                ← registry.js + pilots.js + waves-a/b/c/d.js (132 Revised
+                        Core cards) + waves-genesis-a/b/c.js (79 Genesis
+                        Cycle net-new cards) — see CARD_COVERAGE.md
+ai/                   ← view/base/corp/runner/controller/decks (8 precons,
+                        4 corp / 4 runner) — see AI.md
+tests/                ← run-tests.js + *.test.js files (341 tests)
 tools/                ← soak.js (AI-vs-AI matrix), bundle.js (esbuild ->
                         netrunner.html), ui-smoke.js (jsdom bundle playthrough)
 ui/                   ← browser UI (see docs/UI.md): index.html, main.js,
@@ -355,12 +423,18 @@ index.html            ← identical copy of netrunner.html, written by the same
 ```
 
 ## Card data facts
-- Card codes "20001"–"20132" are the universal primary key
+- Card `code` is the universal primary key: "20001"-"20132" for Revised
+  Core (132 cards), "02xxx" for the Genesis Cycle net-new pool (79 cards,
+  see CARD_COVERAGE.md) — 211 cards total in `cards.json`. NRDB codes are
+  NOT unique across eras in general (classic/NSG both number from
+  "01001") — this project's two pools happen not to collide, but don't
+  assume that holds for any future expansion (see EXPANSION_ASSESSMENT.md
+  finding #2).
 - `quantity` = copies in one Core box (drives legal precon pools); `deckLimit` = max per deck
 - Image URLs: `https://card-images.netrunnerdb.com/v2/large/{code}.jpg`
 - Text markup in `text`: `[credit] [click] [subroutine] [trash] [mu] [recurring-credit] [link]`, `<strong>` — UI must render these as symbols; `strippedText` is the plain version
 - 1 title quirk: "Doppelgänger" (data) vs "Doppelganger" (checklist PDF) — data is correct
-- Verified: counts, per-card quantities, and titles all match the ADN49 checklist
+- Verified: counts, per-card quantities, and titles all match the ADN49 checklist (Revised Core) / the six raw Genesis pack fetches (Genesis Cycle)
 
 ## Environment gotchas (learned the hard way)
 - Sandbox bash has **no general outbound network** (curl exit 56), but git-over-https to github.com AND `npm install` DO work (allowlisted). Only `mcp__workspace__web_fetch` works for arbitrary HTTP.
