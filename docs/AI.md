@@ -154,14 +154,17 @@ ctl.run();          // answers corp decisions, stops at the runner's turn
 
 ## Precon decks (ai/decks.js)
 
-7 decks, one per identity, single-core-box legal (tests/decks.test.js
-verifies size, influence, quantity caps, agenda points, in-faction agendas).
-Archer IS included (AI-gated, above). Phase 9 closed the three remaining
-engine gaps that had excluded cards from these decks — Datasucker 20009,
-Pheromones 20031, and Test Run 20042 are now fully implemented (see
-CARD_COVERAGE.md) and included in their native-faction precons (Reina:
-Datasucker; Gabe: Pheromones; Chaos Theory: Test Run), with no net
-influence/size change.
+8 decks (4 corp, 4 runner), one per identity, single-core-box legal
+(tests/decks.test.js verifies size, influence, quantity caps, agenda points,
+in-faction agendas). Archer IS included (AI-gated, above). Phase 9 closed
+the three remaining engine gaps that had excluded cards from these decks —
+Datasucker 20009, Pheromones 20031, and Test Run 20042 are now fully
+implemented (see CARD_COVERAGE.md) and included in their native-faction
+precons (Reina: Datasucker; Gabe: Pheromones; Chaos Theory: Test Run), with
+no net influence/size change. The Genesis Cycle pass later added a new 8th
+precon, `andromeda-core` (Andromeda: Dispossessed Ristie), built entirely
+from the Criminal + neutral-runner pool at 0 influence — see the matchup
+soak below.
 
 ## Known limitations / Phase 9 tuning list
 
@@ -201,6 +204,18 @@ influence/size change.
   from before this investigation. Left open for a future session — the
   diagnostic groundwork above (strength distribution, the Ice Wall
   exception) should save re-deriving it from scratch.
+- **Andromeda (new 8th precon) vs all 4 corp decks — soak-tested, healthy,
+  no tuning needed.** `tools/soak.js 20 standard standard` and `20 hard
+  hard` both showed every andromeda-core row within normal variance (no
+  stalls, no aiErrors, 640 games total across the two runs). The one row
+  that looked skewed at 20 seeds — weyland-core vs andromeda-core, 65%/35%
+  corp at hard/hard — was re-run at 60 seeds/hard-hard per matchup and
+  settled to 53.3%/46.7%, i.e. sampling noise, not a real skew: at n=20 the
+  binomial standard error is ~11%, so a 65/35 read is under 1.5 SE from
+  50/50. All four andromeda-core matchups landed in the 51.7%-56.7% corp
+  range on the 60-seed runs — comparable to or tighter than the
+  already-accepted jinteki-vs-gabe/reina baselines above. No AI or deck
+  change made for this matchup.
 - Corp never intentionally over-advances traps beyond 3, and never
   double-installs upgrades; Runner ignores Sneakdoor-style redirect value in
   runEV (plays it fine when scripted mods fire, just doesn't seek it).
