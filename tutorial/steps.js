@@ -42,7 +42,7 @@ export const GUIDED_STEPS = [
   {
     match: { ctx: 'actionMenu' }, allow: { id: 'run:remote1' },
     title: 'Your first run',
-    text: 'The corp built REMOTE 1 and rezzed Adonis Campaign there — it pays them 3 credits every turn. The server has NO ice protecting it. Running an undefended server is free money: click Run on remote1.',
+    text: 'The corp built REMOTE 1 and rezzed PAD Campaign there — it pays them 1 credit every turn. The server has NO ice protecting it. Running an undefended server is free money: click Run on remote1.',
   },
   {
     match: { ctx: 'runStep', promptIncludes: 'Jack out' }, allow: { id: 'continue' },
@@ -50,9 +50,9 @@ export const GUIDED_STEPS = [
     text: 'At the edge of any server — even one with no ice — you may jack out instead of finishing the run. Jacking out ends the run immediately with no access. Nothing here threatens you: continue.',
   },
   {
-    match: { ctx: 'runStep', promptIncludes: 'Adonis' }, allow: { id: 'trash' },
+    match: { ctx: 'runStep', promptIncludes: 'PAD Campaign' }, allow: { id: 'trash' },
     title: 'Access & trash',
-    text: 'A successful run lets you ACCESS the cards there. Many corp cards show a trash cost — pay it to bin them. Trash Adonis for 3 credits, or it pays the corp 9 more over the next turns.',
+    text: 'A successful run lets you ACCESS the cards there. Many corp cards show a trash cost — pay it to bin them. Trash PAD Campaign for 4 credits, or it keeps paying the corp 1 credit every turn.',
   },
   {
     match: { ctx: 'actionMenu' }, allow: { id: 'run:rd' },

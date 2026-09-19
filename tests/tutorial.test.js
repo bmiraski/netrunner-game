@@ -45,7 +45,7 @@ export default [
     const titles = tut.game.log.filter(e => e.data?.title).map(e => `${e.type}:${e.data.title}`);
     assert.ok(titles.includes('event-played:Sure Gamble'));
     assert.ok(titles.includes('runner-installed:Peacock'));
-    assert.ok(titles.includes('card-trashed:Adonis Campaign'));
+    assert.ok(titles.includes('card-trashed:PAD Campaign'));
     assert.ok(titles.includes('ice-rezzed:Viktor 1.0'));
     assert.ok(titles.includes('agenda-stolen:Project Ares'));
     assert.ok(types.filter(t => t === 'sub-broken').length >= 2, 'both Viktor subs broken');

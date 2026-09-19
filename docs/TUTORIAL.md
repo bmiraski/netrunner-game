@@ -24,10 +24,10 @@ tutorial/
 
 ## The guided script (steps.js)
 
-12 steps covering: keep hand → Sure Gamble (clicks & credits) → install
+14 steps covering: keep hand → Sure Gamble (clicks & credits) → install
 Peacock (icebreakers, MU) → draw → click-for-credit → run undefended remote →
-trash Adonis (access & trash costs) → run R&D → click-break Viktor 1.0 twice
-(ice, subroutines, bioroids) → continue to access → Project Ares stolen
+trash PAD Campaign (access & trash costs) → run R&D → click-break Viktor 1.0
+twice (ice, subroutines, bioroids) → continue to access → Project Ares stolen
 (win condition) → final step releases control (allow: null) into free play.
 
 Each step has `match` (context tag / prompt substring, validated against the
@@ -65,9 +65,9 @@ Sure Gamble + breakers in the runner's first hand.
 ## Verification
 
 - `tests/tutorial.test.js` (5 tests): clean replay, lesson coverage
-  (Sure Gamble / Peacock / Adonis trash / Viktor rez / 2 sub breaks / Ares
-  steal, 2 pts), event-callout once-only semantics, hint legality over 40
-  free-play decisions, EVENT_CALLOUTS key validity.
+  (Sure Gamble / Peacock / PAD Campaign trash / Viktor rez / 2 sub breaks /
+  Ares steal, 2 pts), event-callout once-only semantics, hint legality over
+  40 free-play decisions, EVENT_CALLOUTS key validity.
 - `tools/ui-smoke.js` tutorial mode: clicks through the BUILT bundle — guided
   portion via the only-enabled buttons, then random free play to game over;
   asserts callouts rendered throughout.
